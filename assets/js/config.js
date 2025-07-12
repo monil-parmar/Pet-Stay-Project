@@ -6,9 +6,9 @@ window.PETSTAY_CONFIG = {
   REDIRECT_SIGN_IN_URL: 'https://main.d3esln33qx1ws1.amplifyapp.com/admin-frontend/post-login.html',
   REDIRECT_SIGN_OUT_URL: 'https://main.d3esln33qx1ws1.amplifyapp.com/index.html',
   BOOKINGS_API_URL: 'https://jv0ycwac6i.execute-api.us-east-1.amazonaws.com/bookings',
-  ROOMS_AVAILABILITY_API_URL: 'https://jv0ycwac6i.execute-api.us-east-1.amazonaws.com/rooms/availability',
-  NEW_BOOKING_API_URL: 'https://jv0ycwac6i.execute-api.us-east-1.amazonaws.com/newbooking',
-  CHECKIN_API_URL: 'https://jv0ycwac6i.execute-api.us-east-1.amazonaws.com/booking',
+  ROOMS_AVAILABILITY_API_URL: 'https://jv0ycwac6i.execute-api.us-east-1.amazonaws.com/PetStayAPI/rooms/availability',
+  NEW_BOOKING_API_URL: 'https://jv0ycwac6i.execute-api.us-east-1.amazonaws.com/PetStayAPI/newbooking',
+  CHECKIN_API_URL: 'https://jv0ycwac6i.execute-api.us-east-1.amazonaws.com/PetStayAPI/booking',
 };
 
 // Safety check: crash the page if placeholders were not replaced
