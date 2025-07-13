@@ -21,12 +21,9 @@ window.PETSTAY_CONFIG = {
   // New Booking (Step Functions)
   NEW_BOOKING_API_URL: 'https://24q261zi50.execute-api.us-east-1.amazonaws.com/newbooking',      // POST /newbooking
 
-  // Admin Dashboard Action APIs — use POST { bookingId } in request body
-  CONFIRM_API_URL:  'https://24q261zi50.execute-api.us-east-1.amazonaws.com/confirm',            // POST /confirm
-  CANCEL_API_URL:   'https://24q261zi50.execute-api.us-east-1.amazonaws.com/cancel',             // POST /cancel
-  CHECKIN_API_URL:  'https://24q261zi50.execute-api.us-east-1.amazonaws.com/checkin',            // POST /checkin
-  CHECKOUT_API_URL: 'https://24q261zi50.execute-api.us-east-1.amazonaws.com/checkout',           // POST /checkout
-  RESTORE_API_URL:  'https://24q261zi50.execute-api.us-east-1.amazonaws.com/restore'             // POST /restore
+  // Unified Admin Booking Action Base URL — POST to /booking/{id}/{action}
+  BOOKING_ACTION_BASE_URL: 'https://24q261zi50.execute-api.us-east-1.amazonaws.com/booking'
+  
 };
 
 // Safety check

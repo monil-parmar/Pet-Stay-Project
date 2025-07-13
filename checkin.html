@@ -9,7 +9,7 @@
   <script defer src="https://cdn.jsdelivr.net/npm/aws-amplify@latest/dist/aws-amplify.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <!-- Add this to <head> if you're using LineIcons -->
-<link href="https://cdn.lineicons.com/2.0/LineIcons.css" rel="stylesheet">
+  <link href="https://cdn.lineicons.com/2.0/LineIcons.css" rel="stylesheet">
 
   <script src="/assets/js/config.js"></script>
 </head>
@@ -162,13 +162,14 @@
           return;
         }
 
-        const res = await fetch(`${window.PETSTAY_CONFIG.BOOKING_API_URL}/${bookingId}/checkin`, {
+        const res = await fetch(`${window.PETSTAY_CONFIG.BOOKING_ACTION_BASE_URL}/${bookingId}/checkin`, {
           method: "POST",
           headers: {
             Authorization: `Bearer ${session.getIdToken().getJwtToken()}`,
             "Content-Type": "application/json"
           }
         });
+
 
         const contentType = res.headers.get("content-type") || "";
         let result = {};
