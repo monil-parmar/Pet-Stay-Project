@@ -308,20 +308,30 @@
     document.getElementById("speciesFilter").addEventListener("change", () => renderBookings(allBookings));
   });
 
-  async function loadBookings() {
-    const tbody = document.getElementById("bookingsTableBody");
-    tbody.innerHTML = `<tr><td colspan="10" class="text-center">Loading...</td></tr>`;
-    try {
-      const res = await fetch(window.PETSTAY_CONFIG.BOOKINGS_API_URL);
-      const contentType = res.headers.get("content-type");
-      const result = contentType?.includes("application/json") ? await res.json() : {};
-      allBookings = result.bookings || [];
-      renderBookings(allBookings);
-    } catch (err) {
-      console.error("Failed to load bookings:", err);
-      showToast("Failed to load bookings", true);
-    }
+async function loadBookings() {
+  const tbody = document.getElementById("bookingsTableBody");
+  tbody.innerHTML = `<tr><td colspan="10" class="text-center">Loading...</td></tr>`;
+
+  try {
+    const token = await getAuthToken(); // Get Cognito JWT
+
+    const res = await fetch(window.PETSTAY_CONFIG.BOOKINGS_API_URL, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+
+    const contentType = res.headers.get("content-type");
+    const result = contentType?.includes("application/json") ? await res.json() : {};
+
+    allBookings = result.bookings || [];
+    renderBookings(allBookings);
+  } catch (err) {
+    console.error("Failed to load bookings:", err);
+    showToast("Failed to load bookings", true);
   }
+}
+
 
   function renderBookings(bookings) {
     const tbody = document.getElementById("bookingsTableBody");
@@ -413,14 +423,23 @@
 
     if (!confirm(confirmMessages[action])) return;
 
+    const apiEndpoints = {
+      cancel: "cancel",
+      confirm: "confirm",
+      checkin: "checkin",
+      checkout: "checkout",
+      restore: "restore"
+    };
+
     try {
       const token = await getAuthToken();
-      const res = await fetch(`${window.PETSTAY_CONFIG.BOOKING_API_URL}/${id}/${action}`, {
+      const res = await fetch(`https://24q261zi50.execute-api.us-east-1.amazonaws.com/${apiEndpoints[action]}`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json"
-        }
+        },
+        body: JSON.stringify({ bookingId: id })
       });
 
       const contentType = res.headers.get("content-type");
@@ -476,6 +495,7 @@
     new bootstrap.Modal(document.getElementById("qrModal")).show();
   }
 </script>
+
 
 
 </body>

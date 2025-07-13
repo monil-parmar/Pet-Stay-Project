@@ -152,36 +152,25 @@
 
 
 <script>
-  // When the DOM is fully loaded...
   document.addEventListener("DOMContentLoaded", () => {
-
-    // Grab the booking form element
     const form = document.getElementById("bookingForm");
-
-    // Grab the loading overlay element
     const overlay = document.getElementById("loadingOverlay");
 
-    // Function to show the loading overlay and disable submit button
     const showLoading = () => {
-      overlay.style.display = "flex"; // Show overlay
-      form.querySelector("button[type='submit']").disabled = true; // Disable submit
+      overlay.style.display = "flex";
+      form.querySelector("button[type='submit']").disabled = true;
     };
 
-    // Function to hide the loading overlay and re-enable submit button
     const hideLoading = () => {
-      overlay.style.display = "none"; // Hide overlay
-      form.querySelector("button[type='submit']").disabled = false; // Enable submit
+      overlay.style.display = "none";
+      form.querySelector("button[type='submit']").disabled = false;
     };
 
-    // Add submit handler for the form
     form.addEventListener("submit", async (e) => {
-      e.preventDefault(); // Prevent default form submit
-      showLoading(); // Show loading while request runs
+      e.preventDefault();
+      showLoading();
 
-      // Get all form data
       const formData = new FormData(form);
-
-      // Build a plain JS object with form fields
       const data = {
         OwnerName: formData.get("ownerName"),
         Email: formData.get("email"),
@@ -196,72 +185,57 @@
       };
 
       try {
-        // Call the backend to create new booking using global config URL
         const response = await fetch(window.PETSTAY_CONFIG.NEW_BOOKING_API_URL, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(data) // Send booking data as JSON
+          body: JSON.stringify(data)
         });
 
-        // If API call failed → throw error
-        if (!response.ok) {
-          throw new Error(`API error: ${response.status}`);
-        }
+        if (!response.ok) throw new Error(`API error: ${response.status}`);
 
-        // Parse JSON response
         const result = await response.json();
-        console.log("Step Function start result:", result);
-
-        // Get executionArn from response (unique Step Function ID)
-        const executionArn = result.executionArn || result.executionArn?.trim();
+        const executionArn = result.executionArn?.trim();
         if (!executionArn) throw new Error("No executionArn returned!");
 
-        let tries = 0; // Polling attempts counter
-
-        // Function to keep checking booking status until done
+        let tries = 0;
         async function poll() {
-          tries++; // Count tries
+          tries++;
+          const url = `${window.PETSTAY_CONFIG.BOOKING_STATUS_API_URL}/${encodeURIComponent(executionArn)}`;
+          const statusRes = await fetch(url, { headers: { "Content-Type": "application/json" } });
 
-          // Call backend to get current status
-          const statusRes = await fetch(`${window.PETSTAY_CONFIG.BOOKING_STATUS_API_URL}/${encodeURIComponent(executionArn)}`);
+          const contentType = statusRes.headers.get("content-type") || "";
+          if (!contentType.includes("application/json")) {
+            const preview = await statusRes.text();
+            throw new Error("Invalid response:\n" + preview.slice(0, 200));
+          }
+
           const statusData = await statusRes.json();
           console.log("Polling result:", statusData);
 
-          // If booking succeeded → redirect to success page
           if (statusData.status === "SUCCEEDED") {
-            const BookingID = statusData.output.BookingID; // Get booking ID
-            const OwnerName = statusData.output.OwnerName; // Get owner name
+            const BookingID = statusData.output.BookingID;
+            const OwnerName = statusData.output.OwnerName;
 
-            // Store in session storage so success page can show details
             sessionStorage.setItem("BookingID", BookingID);
             sessionStorage.setItem("OwnerName", OwnerName);
-
-            // Redirect to success page with booking ID in query
             window.location.href = `booking-success.html?bookingId=${BookingID}`;
-
-          // If failed → show error
           } else if (["FAILED", "TIMED_OUT", "ABORTED"].includes(statusData.status)) {
             hideLoading();
             alert(`Booking failed: ${statusData.status}`);
-
-          // If too many tries → stop polling
           } else if (tries >= 30) {
             hideLoading();
             alert("Booking timed out.");
-
-          // Else → wait 2s and poll again
           } else {
             setTimeout(poll, 2000);
           }
         }
 
-        // Start polling loop
         poll();
 
       } catch (err) {
-        console.error(err); // Log error for debug
-        alert("Booking failed: " + err.message); // Show error to user
-        hideLoading(); // Hide loading overlay if fail
+        console.error(err);
+        alert("Booking failed: " + err.message);
+        hideLoading();
       }
     });
   });

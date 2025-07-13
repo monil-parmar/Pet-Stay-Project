@@ -8,6 +8,7 @@ window.PETSTAY_CONFIG = {
 
   BOOKINGS_API_URL: 'https://24q261zi50.execute-api.us-east-1.amazonaws.com/bookings',          // All bookings
   BOOKING_API_URL: 'https://24q261zi50.execute-api.us-east-1.amazonaws.com/booking',            // Single booking by ID
+  BOOKING_STATUS_API_URL: 'https://24q261zi50.execute-api.us-east-1.amazonaws.com/bookingStatus', // Booking status by ID
 
   ROOMS_AVAILABILITY_API_URL: 'https://24q261zi50.execute-api.us-east-1.amazonaws.com/rooms/availability',
   NEW_BOOKING_API_URL: 'https://24q261zi50.execute-api.us-east-1.amazonaws.com/newbooking',
