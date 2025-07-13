@@ -5,12 +5,10 @@ window.PETSTAY_CONFIG = {
   COGNITO_DOMAIN: 'us-east-1qixgkkfzg.auth.us-east-1.amazoncognito.com',
   REDIRECT_SIGN_IN_URL: 'https://main.d3esln33qx1ws1.amplifyapp.com/admin-frontend/post-login.html',
   REDIRECT_SIGN_OUT_URL: 'https://main.d3esln33qx1ws1.amplifyapp.com/index.html',
-  BOOKINGS_API_URL: 'https://jv0ycwac6i.execute-api.us-east-1.amazonaws.com/bookings',
-  ROOMS_AVAILABILITY_API_URL: 'https://jv0ycwac6i.execute-api.us-east-1.amazonaws.com/PetStayAPI/rooms/availability',
-  NEW_BOOKING_API_URL: 'https://jv0ycwac6i.execute-api.us-east-1.amazonaws.com/PetStayAPI/newbooking',
-  CHECKIN_API_URL: 'https://jv0ycwac6i.execute-api.us-east-1.amazonaws.com/PetStayAPI/booking',
-  BOOKING_STATUS_API_URL: 'https://jv0ycwac6i.execute-api.us-east-1.amazonaws.com/bookingStatus',
-
+  BOOKING_STATUS_API_URL: 'https://24q261zi50.execute-api.us-east-1.amazonaws.com/bookingStatus',
+  ROOMS_AVAILABILITY_API_URL: 'https://24q261zi50.execute-api.us-east-1.amazonaws.com/rooms/availability',
+  NEW_BOOKING_API_URL: 'https://24q261zi50.execute-api.us-east-1.amazonaws.com/newbooking',
+  CHECKIN_API_URL: 'https://24q261zi50.execute-api.us-east-1.amazonaws.com/booking',
 };
 
 // Safety check: crash the page if placeholders were not replaced
