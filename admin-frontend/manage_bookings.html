@@ -287,106 +287,67 @@
   <script src="https://cdn.jsdelivr.net/npm/aws-amplify@latest/dist/aws-amplify.min.js"></script>
   <script src="/assets/js/auth-check.js"></script>
 
-  <script>
-    /**
-     * Get the Cognito Auth Token for secure API calls
-     */
-    async function getAuthToken() {
-      // Use Amplify to get the current user session
-      const session = await Amplify.Auth.currentSession();
-      // Return the JWT token for the ID Token
-      return session.getIdToken().getJwtToken();
+<script>
+  async function getAuthToken() {
+    const session = await Amplify.Auth.currentSession();
+    return session.getIdToken().getJwtToken();
+  }
+
+  let allBookings = [];
+
+  document.addEventListener("DOMContentLoaded", async () => {
+    await loadBookings();
+    document.getElementById("searchInput").addEventListener("input", () => renderBookings(allBookings));
+    document.getElementById("statusFilter").addEventListener("change", () => renderBookings(allBookings));
+    document.getElementById("speciesFilter").addEventListener("change", () => renderBookings(allBookings));
+  });
+
+  async function loadBookings() {
+    try {
+      const res = await fetch(window.PETSTAY_CONFIG.BOOKINGS_API_URL);
+      const result = await res.json();
+      allBookings = result.bookings;
+      renderBookings(allBookings);
+      console.log("Loaded bookings:", allBookings);
+    } catch (err) {
+      console.error("Failed to load bookings:", err);
     }
+  }
 
-    // Stores all bookings in memory for search/filter
-    let allBookings = [];
+  function renderBookings(bookings) {
+    const tbody = document.getElementById("bookingsTableBody");
+    const searchValue = document.getElementById("searchInput")?.value.toLowerCase() || "";
+    const statusFilter = document.getElementById("statusFilter")?.value || "";
+    const speciesFilter = document.getElementById("speciesFilter")?.value || "";
 
-    /**
-     * When the page loads:
-     * - Fetch bookings from API
-     * - Hook up search input and filter dropdowns
-     */
-    document.addEventListener("DOMContentLoaded", async () => {
-      await loadBookings(); // Initial load
+    const filtered = bookings.filter(b =>
+      (!statusFilter || b.Status === statusFilter) &&
+      (!speciesFilter || b.PetSpecies === speciesFilter) &&
+      (
+        b.OwnerName?.toLowerCase().includes(searchValue) ||
+        b.PetName?.toLowerCase().includes(searchValue)
+      )
+    );
 
-      // Hook up search input field
-      document.getElementById("searchInput").addEventListener("input", () => renderBookings(allBookings));
+    tbody.innerHTML = "";
 
-      // Hook up status filter dropdown
-      document.getElementById("statusFilter").addEventListener("change", () => renderBookings(allBookings));
+    filtered.forEach((b, index) => {
+      const status = b.Status?.toLowerCase() || "";
+      const statusClass = {
+        "pending": "info-btn",
+        "confirmed": "active-btn",
+        "checked-in": "success-btn",
+        "checked-out": "warning-btn",
+        "cancelled": "close-btn"
+      }[status] || "info-btn";
 
-      // Hook up species filter dropdown
-      document.getElementById("speciesFilter").addEventListener("change", () => renderBookings(allBookings));
-    });
+      const showCheckout = b.Status === "Checked-In";
+      const showCheckIn = b.Status === "Confirmed";
+      const showConfirm = b.Status === "Pending";
+      const showRestore = status === "cancelled";
+      const showQR = (b.QRCodeURL || b.QRBase64) && !showRestore;
 
-    /**
-     * Fetch all bookings from API Gateway.
-     * Calls your Lambda → DynamoDB → returns JSON.
-     */
-    async function loadBookings() {
-      try {
-        // Fetch bookings using your global config URL
-        const res = await fetch(window.PETSTAY_CONFIG.BOOKINGS_API_URL);
-        const result = await res.json();
-
-        // Store in global variable
-        allBookings = result.bookings;
-
-        // Render to HTML table
-        renderBookings(allBookings);
-
-        console.log("Loaded bookings:", allBookings);
-      } catch (err) {
-        console.error("Failed to load bookings:", err);
-      }
-    }
-
-    /**
-     * Render bookings to the HTML table:
-     * - Filters by search & dropdowns
-     * - Adds action buttons
-     */
-    function renderBookings(bookings) {
-      const tbody = document.getElementById("bookingsTableBody");
-
-      // Get search & filter values
-      const searchValue = document.getElementById("searchInput")?.value.toLowerCase() || "";
-      const statusFilter = document.getElementById("statusFilter")?.value || "";
-      const speciesFilter = document.getElementById("speciesFilter")?.value || "";
-
-      // Filter bookings
-      const filtered = bookings.filter(b =>
-        (!statusFilter || b.Status === statusFilter) &&
-        (!speciesFilter || b.PetSpecies === speciesFilter) &&
-        (
-          b.OwnerName?.toLowerCase().includes(searchValue) ||
-          b.PetName?.toLowerCase().includes(searchValue)
-        )
-      );
-
-      // Clear old rows
-      tbody.innerHTML = "";
-
-      // Add rows for each filtered booking
-      filtered.forEach((b, index) => {
-        const status = b.Status?.toLowerCase() || "";
-        const statusClass = {
-          "pending": "info-btn",
-          "confirmed": "active-btn",
-          "checked-in": "success-btn",
-          "checked-out": "warning-btn",
-          "cancelled": "close-btn"
-        }[status] || "info-btn";
-
-        // Decide which action buttons to show
-        const showCheckout = b.Status === "Checked-In";
-        const showCheckIn = b.Status === "Confirmed";
-        const showConfirm = b.Status === "Pending";
-        const showRestore = status === "cancelled";
-        const showQR = (b.QRCodeURL || b.QRBase64) && !showRestore;
-
-        // Append table row
-        tbody.innerHTML += `
+      tbody.innerHTML += `
         <tr>
           <td>${index + 1}</td>
           <td>${b.OwnerName}</td>
@@ -399,188 +360,142 @@
           <td><span class="status-btn ${statusClass}">${b.Status}</span></td>
           <td>
             <div class="action">
-              <!-- View details button -->
               <button class="text-primary" title="View Details" onclick='viewBooking(${JSON.stringify(b)})'>
                 <span class="material-icons">visibility</span>
               </button>
-
-              <!-- Cancel button (unless restoring) -->
               ${!showRestore ? `
                 <button class="text-danger" title="Cancel Booking" onclick="cancelBooking('${b.BookingID}')">
                   <span class="material-icons">delete</span>
-                </button>` : ""
-          }
-
-              <!-- Confirm button (Pending only) -->
+                </button>` : ""}
               ${showConfirm ? `
                 <button class="text-warning" title="Confirm Booking" onclick="confirmBooking('${b.BookingID}')">
                   <span class="material-icons">check_circle</span>
-                </button>` : ""
-          }
-
-              <!-- Check In button (Confirmed only) -->
+                </button>` : ""}
               ${showCheckIn ? `
                 <button class="text-info" title="Check In" onclick="checkinBooking('${b.BookingID}')">
                   <span class="material-icons">login</span>
-                </button>` : ""
-          }
-
-              <!-- Check Out button (Checked-In only) -->
+                </button>` : ""}
               ${showCheckout ? `
                 <button class="text-success" title="Check Out" onclick="checkoutBooking('${b.BookingID}')">
                   <span class="material-icons">logout</span>
-                </button>` : ""
-          }
-
-              <!-- Restore button (Cancelled only) -->
+                </button>` : ""}
               ${showRestore ? `
                 <button class="text-info" title="Restore Booking" onclick="restoreBooking('${b.BookingID}')">
                   <span class="material-icons">restore</span>
-                </button>` : ""
-          }
-
-              <!-- View QR button if exists -->
+                </button>` : ""}
               ${showQR ? `
-  <button 
-    class="text-secondary"
-    title="View QR Code"
-    data-url="${b.QRCodeURL || 'data:image/png;base64,' + b.QRBase64}"
-    onclick="showQRModal(this)">
-    <span class="material-icons">qr_code</span>
-  </button>` : ""
-          }
+                <button class="text-secondary" title="View QR Code" data-url="${b.QRCodeURL || 'data:image/png;base64,' + b.QRBase64}" onclick="showQRModal(this)">
+                  <span class="material-icons">qr_code</span>
+                </button>` : ""}
             </div>
           </td>
-        </tr>
-      `;
+        </tr>`;
+    });
+  }
+
+  async function cancelBooking(id) {
+    if (!confirm("Cancel this booking?")) return;
+    try {
+      const token = await getAuthToken();
+      const res = await fetch(`${window.PETSTAY_CONFIG.BOOKING_API_URL}/${id}/cancel`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` }
       });
-    }
-
-    /**
-     * Cancel a booking
-     */
-    async function cancelBooking(id) {
-      if (!confirm("Cancel this booking?")) return;
-      try {
-        // Get token for secure call
-        const token = await getAuthToken();
-
-        // Call backend to cancel booking using config
-        const res = await fetch(`${window.PETSTAY_CONFIG.BOOKINGS_API_URL}/${id}/cancel`, {
-          method: "POST",
-          headers: { Authorization: `Bearer ${token}` }
-        });
-
-        const data = await res.json();
-        if (res.status === 403) {
-          showToast("Not authorized to cancel", true);
-        } else {
-          showToast(data.message || "Cancelled");
-          await loadBookings();
-        }
-      } catch (err) {
-        showToast("Error cancelling booking", true);
-        console.error(err);
-      }
-    }
-
-    /**
-     * Check out a guest
-     */
-    async function checkoutBooking(id) {
-      if (!confirm("Check out this guest?")) return;
-      try {
-        const token = await getAuthToken();
-        const res = await fetch(`${window.PETSTAY_CONFIG.BOOKINGS_API_URL}/${id}/checkout`, {
-          method: "POST",
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        const data = await res.json();
-        if (res.status === 403) {
-          showToast("Not authorized to check out", true);
-        } else {
-          showToast(data.message || "Checked out");
-          await loadBookings();
-        }
-      } catch (err) {
-        showToast("Error checking out", true);
-        console.error(err);
-      }
-    }
-
-    /**
-     * Confirm a booking (Pending → Confirmed)
-     */
-    async function confirmBooking(id) {
-      if (!confirm("Confirm this booking?")) return;
-      try {
-        const token = await getAuthToken();
-        const res = await fetch(`${window.PETSTAY_CONFIG.BOOKINGS_API_URL}/${id}/confirm`, {
-          method: "POST",
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        const data = await res.json();
-        if (res.status === 403) {
-          showToast("Not authorized to confirm", true);
-        } else {
-          showToast(data.message || "Confirmed");
-          await loadBookings();
-        }
-      } catch (err) {
-        showToast("Error confirming booking", true);
-        console.error(err);
-      }
-    }
-
-    /**
-     * Check in a guest (Confirmed → Checked-In)
-     */
-    async function checkinBooking(id) {
-      if (!confirm("Mark guest as Checked-In?")) return;
-      try {
-        const token = await getAuthToken();
-        const res = await fetch(`${window.PETSTAY_CONFIG.BOOKINGS_API_URL}/${id}/checkin`, {
-          method: "POST",
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        const data = await res.json();
-        if (res.status === 403) {
-          showToast("Not authorized to check in", true);
-        } else {
-          showToast(data.message || "Checked-In");
-          await loadBookings();
-        }
-      } catch (err) {
-        showToast("Error checking in", true);
-        console.error(err);
-      }
-    }
-
-    /**
-     * Restore a cancelled booking
-     */
-    async function restoreBooking(id) {
-      if (!confirm("Restore this cancelled booking?")) return;
-      try {
-        const token = await getAuthToken();
-        const res = await fetch(`${window.PETSTAY_CONFIG.BOOKINGS_API_URL}/${id}/restore`, {
-          method: "POST",
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        const data = await res.json();
-        showToast(data.message || "Restored");
+      const data = await res.json();
+      if (res.status === 403) {
+        showToast("Not authorized to cancel", true);
+      } else {
+        showToast(data.message || "Cancelled");
         await loadBookings();
-      } catch (err) {
-        showToast("Error restoring", true);
-        console.error(err);
       }
+    } catch (err) {
+      showToast("Error cancelling booking", true);
+      console.error(err);
     }
+  }
 
-    /**
-     * Show booking details in a modal popup
-     */
-    function viewBooking(b) {
-      const html = `
+  async function confirmBooking(id) {
+    if (!confirm("Confirm this booking?")) return;
+    try {
+      const token = await getAuthToken();
+      const res = await fetch(`${window.PETSTAY_CONFIG.BOOKING_API_URL}/${id}/confirm`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (res.status === 403) {
+        showToast("Not authorized to confirm", true);
+      } else {
+        showToast(data.message || "Confirmed");
+        await loadBookings();
+      }
+    } catch (err) {
+      showToast("Error confirming booking", true);
+      console.error(err);
+    }
+  }
+
+  async function checkinBooking(id) {
+    if (!confirm("Mark guest as Checked-In?")) return;
+    try {
+      const token = await getAuthToken();
+      const res = await fetch(`${window.PETSTAY_CONFIG.BOOKING_API_URL}/${id}/checkin`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (res.status === 403) {
+        showToast("Not authorized to check in", true);
+      } else {
+        showToast(data.message || "Checked-In");
+        await loadBookings();
+      }
+    } catch (err) {
+      showToast("Error checking in", true);
+      console.error(err);
+    }
+  }
+
+  async function checkoutBooking(id) {
+    if (!confirm("Check out this guest?")) return;
+    try {
+      const token = await getAuthToken();
+      const res = await fetch(`${window.PETSTAY_CONFIG.BOOKING_API_URL}/${id}/checkout`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (res.status === 403) {
+        showToast("Not authorized to check out", true);
+      } else {
+        showToast(data.message || "Checked out");
+        await loadBookings();
+      }
+    } catch (err) {
+      showToast("Error checking out", true);
+      console.error(err);
+    }
+  }
+
+  async function restoreBooking(id) {
+    if (!confirm("Restore this cancelled booking?")) return;
+    try {
+      const token = await getAuthToken();
+      const res = await fetch(`${window.PETSTAY_CONFIG.BOOKING_API_URL}/${id}/restore`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      showToast(data.message || "Restored");
+      await loadBookings();
+    } catch (err) {
+      showToast("Error restoring", true);
+      console.error(err);
+    }
+  }
+
+  function viewBooking(b) {
+    const html = `
       <p><strong>Owner:</strong> ${b.OwnerName}</p>
       <p><strong>Email:</strong> ${b.Email}</p>
       <p><strong>Phone:</strong> ${b.PhoneNumber}</p>
@@ -591,38 +506,32 @@
       <p><strong>Check-In:</strong> ${b.CheckInDate}</p>
       <p><strong>Check-Out:</strong> ${b.CheckOutDate}</p>
       <p><strong>Status:</strong> ${b.Status}</p>
-      <p><strong>Room:</strong> ${b.RoomNumber || "N/A"}</p>
-    `;
-      document.getElementById("modalDetails").innerHTML = html;
-      new bootstrap.Modal(document.getElementById("bookingModal")).show();
-    }
+      <p><strong>Room:</strong> ${b.RoomNumber || "N/A"}</p>`;
+    document.getElementById("modalDetails").innerHTML = html;
+    new bootstrap.Modal(document.getElementById("bookingModal")).show();
+  }
 
-    /**
-     * Show a success or error toast message
-     */
-    function showToast(msg, isError = false) {
-      const toastEl = document.getElementById("toast");
-      const toastMsg = document.getElementById("toastMessage");
-      toastMsg.textContent = msg;
-      toastEl.classList.remove("bg-success", "bg-danger");
-      toastEl.classList.add(isError ? "bg-danger" : "bg-success");
-      bootstrap.Toast.getOrCreateInstance(toastEl).show();
-    }
+  function showToast(msg, isError = false) {
+    const toastEl = document.getElementById("toast");
+    const toastMsg = document.getElementById("toastMessage");
+    toastMsg.textContent = msg;
+    toastEl.classList.remove("bg-success", "bg-danger");
+    toastEl.classList.add(isError ? "bg-danger" : "bg-success");
+    bootstrap.Toast.getOrCreateInstance(toastEl).show();
+  }
 
-    /**
-     * Show QR Code in modal
-     */
-    function showQRModal(button) {
-      const qrUrl = button.dataset.url;
-      if (!qrUrl) {
-        alert("QR not available");
-        return;
-      }
-      const img = document.getElementById("qrModalImage");
-      img.src = qrUrl;
-      new bootstrap.Modal(document.getElementById("qrModal")).show();
+  function showQRModal(button) {
+    const qrUrl = button.dataset.url;
+    if (!qrUrl) {
+      alert("QR not available");
+      return;
     }
-  </script>
+    const img = document.getElementById("qrModalImage");
+    img.src = qrUrl;
+    new bootstrap.Modal(document.getElementById("qrModal")).show();
+  }
+</script>
+
 
 </body>
 
