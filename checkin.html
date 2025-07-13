@@ -160,7 +160,7 @@
           return;
         }
 
-        const res = await fetch(`${window.PETSTAY_CONFIG.CHECKIN_API_URL}/${bookingId}/checkin`, {
+        const res = await fetch(`${window.PETSTAY_CONFIG.BOOKING_API_URL}/${bookingId}/checkin`, {
           method: "POST",
           headers: {
             Authorization: `Bearer ${session.getIdToken().getJwtToken()}`,
