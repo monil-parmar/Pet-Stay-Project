@@ -318,7 +318,7 @@
     </div>
   </footer>
 </main>
-<!-- ======== main-wrapper end =========== -->
+
 
   <!-- ======== main-wrapper end =========== -->
   <!-- ========= All Javascript files linkup ======== -->
@@ -328,49 +328,24 @@
   <script defer src="/assets/js/main.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/aws-amplify@latest/dist/aws-amplify.min.js"></script>
   <script defer src="/assets/js/auth-check.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/amazon-cognito-identity-js@6.2.1/dist/amazon-cognito-identity.min.js"></script>
-
+  
 <script>
-  async function getCurrentUserSession() {
-    return new Promise((resolve, reject) => {
-      const userPool = new AmazonCognitoIdentity.CognitoUserPool({
-        UserPoolId: window.PETSTAY_CONFIG.COGNITO_USER_POOL_ID,
-        ClientId: window.PETSTAY_CONFIG.COGNITO_USER_POOL_CLIENT_ID,
-      });
-
-      const cognitoUser = userPool.getCurrentUser();
-      if (!cognitoUser) return resolve(null);
-
-      cognitoUser.getSession((err, session) => {
-        if (err || !session.isValid()) return resolve(null);
-        resolve({
-          idToken: session.getIdToken().getJwtToken()
-        });
-      });
-    });
-  }
-
+  /**
+   * Load all booking data and show stats + table.
+   * Shows QR code images using pre-signed S3 URLs for security.
+   */
   async function loadDashboardData(filter = "Today") {
     try {
-      const user = await getCurrentUserSession();
-      if (!user) throw new Error("User not authenticated");
-
-      const res = await fetch(window.PETSTAY_CONFIG.BOOKINGS_API_URL, {
-        method: "GET",
-        headers: {
-          Authorization: user.idToken,
-          "Content-Type": "application/json"
-        }
-      });
-
-      if (!res.ok) throw new Error(`API responded with status ${res.status}`);
-
+      // Fetch all bookings from your global config API URL
+      const res = await fetch(window.PETSTAY_CONFIG.BOOKINGS_API_URL);
       const result = await res.json();
-      const bookings = Array.isArray(result.bookings) ? result.bookings : [];
+      const bookings = result.bookings;
 
+      //Get today's date in YYYY-MM-DD format.
       const today = new Date();
       let todayISO = today.toISOString().split("T")[0];
 
+      // Filter bookings by time range
       let filteredBookings = bookings;
       if (filter === "Today") {
         filteredBookings = bookings.filter(b => b.CheckInDate === todayISO);
@@ -384,15 +359,19 @@
         filteredBookings = bookings.filter(b => new Date(b.CheckInDate) >= monthAgo);
       }
 
+      // Count Checked-In bookings
       const checkedIn = bookings.filter(b => b.Status === "Checked-In");
 
+      // Update dashboard stats
       document.getElementById("currentGuests").innerText = checkedIn.length;
       document.getElementById("bookingsToday").innerText = filteredBookings.length;
       document.getElementById("newBookingsCount").innerText = bookings.length;
 
+      // Clear previous table
       const guestTable = document.getElementById("currentGuestsTable");
       guestTable.innerHTML = "";
 
+      // Counters for charts
       const petSpeciesCount = { Dog: 0, Cat: 0 };
       const statusCount = { "Pending": 0, "Confirmed": 0, "Checked-In": 0, "Checked-Out": 0, "Cancelled": 0 };
 
@@ -448,48 +427,45 @@
     }
   }
 
-async function loadRoomAvailability() {
-  try {
-    const user = await getCurrentUserSession();
-    if (!user) throw new Error("User not authenticated");
+  /**
+   * Load room availability for dogs & cats.
+   */
+  async function loadRoomAvailability() {
+    try {
+      // Use global config for availability API
+      const res = await fetch(window.PETSTAY_CONFIG.ROOMS_AVAILABILITY_API_URL);
+      const result = await res.json();
+      const stats = result.stats;
 
-    const res = await fetch(window.PETSTAY_CONFIG.ROOMS_AVAILABILITY_API_URL, {
-      method: "GET",
-      headers: {
-        Authorization: user.idToken,
-        "Content-Type": "application/json"
+      if (res.ok && Array.isArray(stats.rooms)) {
+        let totalDog = 0, availableDog = 0;
+        let totalCat = 0, availableCat = 0;
+
+        stats.rooms.forEach(r => {
+          if (r.petType === "Dog") {
+            totalDog++;
+            if (!r.isOccupied) availableDog++;
+          } else if (r.petType === "Cat") {
+            totalCat++;
+            if (!r.isOccupied) availableCat++;
+          }
+        });
+
+        document.getElementById("dogRooms").innerText = `${availableDog} / ${totalDog}`;
+        document.getElementById("catRooms").innerText = `${availableCat} / ${totalCat}`;
+
+        if (availableDog === 0 || availableCat === 0) {
+          const toast = new bootstrap.Toast(document.getElementById("availabilityToast"));
+          const msg = `${availableDog === 0 ? 'No dog rooms available. ' : ''}${availableCat === 0 ? 'No cat rooms available.' : ''}`;
+          document.getElementById("availabilityMessage").textContent = msg;
+          toast.show();
+        }
       }
-    });
-
-    const result = await res.json();
-    if (!Array.isArray(result.rooms)) throw new Error("Invalid response format");
-
-    let totalDog = 0, availableDog = 0;
-    let totalCat = 0, availableCat = 0;
-
-    result.rooms.forEach(r => {
-      if (r.petType === "Dog") {
-        totalDog++;
-        if (!r.isOccupied) availableDog++;
-      } else if (r.petType === "Cat") {
-        totalCat++;
-        if (!r.isOccupied) availableCat++;
-      }
-    });
-
-    document.getElementById("dogRooms").innerText = `${availableDog} / ${totalDog}`;
-    document.getElementById("catRooms").innerText = `${availableCat} / ${totalCat}`;
-
-    if (availableDog === 0 || availableCat === 0) {
-      const toast = new bootstrap.Toast(document.getElementById("availabilityToast"));
-      const msg = `${availableDog === 0 ? 'No dog rooms available. ' : ''}${availableCat === 0 ? 'No cat rooms available.' : ''}`;
-      document.getElementById("availabilityMessage").textContent = msg;
-      toast.show();
+    } catch (err) {
+      console.error("Room availability error:", err);
     }
-  } catch (err) {
-    console.error("Room availability error:", err);
   }
-}
+
   window.addEventListener("DOMContentLoaded", () => {
     const urlParams = new URLSearchParams(window.location.search);
     const shouldRefresh = urlParams.get("refresh") === "1";
@@ -580,6 +556,8 @@ async function loadRoomAvailability() {
     }
   }
 </script>
+
+
 </body>
 
 </html>
