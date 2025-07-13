@@ -9,6 +9,8 @@ window.PETSTAY_CONFIG = {
   ROOMS_AVAILABILITY_API_URL: 'https://jv0ycwac6i.execute-api.us-east-1.amazonaws.com/PetStayAPI/rooms/availability',
   NEW_BOOKING_API_URL: 'https://jv0ycwac6i.execute-api.us-east-1.amazonaws.com/PetStayAPI/newbooking',
   CHECKIN_API_URL: 'https://jv0ycwac6i.execute-api.us-east-1.amazonaws.com/PetStayAPI/booking',
+  BOOKING_STATUS_API_URL: 'https://jv0ycwac6i.execute-api.us-east-1.amazonaws.com/bookingStatus',
+
 };
 
 // Safety check: crash the page if placeholders were not replaced

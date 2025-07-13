@@ -223,7 +223,7 @@
           tries++; // Count tries
 
           // Call backend to get current status
-          const statusRes = await fetch(`${window.PETSTAY_CONFIG.BOOKINGS_API_URL}/status/${encodeURIComponent(executionArn)}`);
+          const statusRes = await fetch(`${window.PETSTAY_CONFIG.BOOKING_STATUS_API_URL}/${encodeURIComponent(executionArn)}`);
           const statusData = await statusRes.json();
           console.log("Polling result:", statusData);
 
