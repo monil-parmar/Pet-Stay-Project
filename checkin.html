@@ -168,7 +168,7 @@ async function checkInAfterLogin() {
     const email = session.getIdToken().payload.email.toLowerCase();
     if (!allowedStaffEmails.map(e => e.toLowerCase()).includes(email)) {
       alert(`You are not authorized to perform check-in.\nYour email: ${email}`);
-      sessionStorage.removeItem("fromLogin");
+      sessionStorage.removeItem("fromLogin"); // Clear just this
       return;
     }
 
@@ -202,14 +202,15 @@ async function checkInAfterLogin() {
         statusElement.classList.add("bg-success");
       }
 
-      sessionStorage.removeItem("fromLogin");
-      sessionStorage.removeItem("bookingId");
-
-      // ✅ Stay on the same page, show toast, and clean URL
+      // Show toast, clean URL, then clear session
       setTimeout(() => {
         history.replaceState({}, document.title, `${window.location.pathname}?bookingId=${bookingId}`);
         const toast = new bootstrap.Toast(document.getElementById("checkinToast"));
         toast.show();
+
+        // Clear storage AFTER check-in is confirmed and toast shown
+        sessionStorage.removeItem("fromLogin");
+        sessionStorage.removeItem("bookingId");
       }, 800);
 
     } else {

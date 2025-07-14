@@ -63,8 +63,10 @@
         const idToken = session.getIdToken();
         const email = (idToken.payload.email || idToken.payload["cognito:username"] || "unknown").toLowerCase();
 
-        const bookingId = sessionStorage.getItem("bookingId");
-        const fromLogin = sessionStorage.getItem("fromLogin");
+   const urlParams = new URLSearchParams(window.location.search);
+const bookingId = sessionStorage.getItem("bookingId") || urlParams.get("bookingId");
+const fromLogin = sessionStorage.getItem("fromLogin") || urlParams.get("fromLogin");
+
 
         const allowedStaff = ["petstayteam@outlook.com", "petstayteam@gmail.com"];
         const normalizedAllowed = allowedStaff.map(e => e.trim().toLowerCase());
@@ -77,11 +79,14 @@
         }
 
         // ✅ Redirect only — sessionStorage will be cleared in the next page (checkin.html)
-        if (fromLogin === "1" && bookingId) {
-          window.location.href = `/admin-frontend/checkin/?bookingId=${bookingId}&fromLogin=1`;
-        } else {
-          window.location.href = "/admin-frontend/admin_dashboard.html";
-        }
+if (fromLogin === "1" && bookingId) {
+  // ✅ Send them back to checkin.html
+  window.location.href = `/admin-frontend/checkin.html?bookingId=${bookingId}&fromLogin=1`;
+} else {
+  // Otherwise go to dashboard
+  window.location.href = "/admin-frontend/admin_dashboard.html";
+}
+
 
       } catch (err) {
         console.error("Authentication or redirect failed:", err);
