@@ -124,29 +124,27 @@
       ${checkInButtonHTML}`;
   }
 
-  function loginThenCheckIn() {
-    const bookingId = new URLSearchParams(window.location.search).get("bookingId");
-    if (!bookingId) {
-      alert("Booking ID missing from URL. Cannot proceed to login.");
-      return;
-    }
-
-    sessionStorage.setItem("bookingId", bookingId);
-    sessionStorage.setItem("fromLogin", "1");
-
-    const checkInButton = document.getElementById("checkinButton");
-    if (checkInButton) {
-      checkInButton.disabled = true;
-      checkInButton.innerText = "Redirecting to login...";
-    }
-
-    const loginURL = `https://${window.PETSTAY_CONFIG.COGNITO_DOMAIN}/login` +
-      `?client_id=${window.PETSTAY_CONFIG.COGNITO_USER_POOL_CLIENT_ID}` +
-      `&response_type=code&scope=email+openid+phone` +
-      `&redirect_uri=${encodeURIComponent(window.PETSTAY_CONFIG.REDIRECT_SIGN_IN_URL)}`;
-
-    window.location.href = loginURL;
+ function loginThenCheckIn() {
+  const bookingId = new URLSearchParams(window.location.search).get("bookingId");
+  if (!bookingId) {
+    alert("Booking ID missing from URL. Cannot proceed to login.");
+    return;
   }
+
+  // Save in session in case redirect params get dropped
+  sessionStorage.setItem("bookingId", bookingId);
+  sessionStorage.setItem("fromLogin", "1");
+
+  const redirectUri = `${window.PETSTAY_CONFIG.REDIRECT_SIGN_IN_URL}?bookingId=${bookingId}&fromLogin=1`;
+
+  const loginURL = `https://${window.PETSTAY_CONFIG.COGNITO_DOMAIN}/login` +
+    `?client_id=${window.PETSTAY_CONFIG.COGNITO_USER_POOL_CLIENT_ID}` +
+    `&response_type=code&scope=email+openid+phone` +
+    `&redirect_uri=${encodeURIComponent(redirectUri)}`;
+
+  window.location.href = loginURL;
+}
+
 
 async function checkInAfterLogin() {
   try {
