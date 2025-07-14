@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="../assets/css/bootstrap.min.css" />
   <link rel="stylesheet" href="../assets/css/main.css" />
   <link rel="stylesheet" href="../assets/css/customer.css" />
-    <script src="/assets/js/config.js"></script>
+  <script src="/assets/js/config.js"></script>
 </head>
 
 <body>
@@ -151,99 +151,111 @@
 
 
 
-<script>
-  document.addEventListener("DOMContentLoaded", () => {
-    const form = document.getElementById("bookingForm");
-    const overlay = document.getElementById("loadingOverlay");
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const form = document.getElementById("bookingForm");
+      const overlay = document.getElementById("loadingOverlay");
 
-    const showLoading = () => {
-      overlay.style.display = "flex";
-      form.querySelector("button[type='submit']").disabled = true;
-    };
-
-    const hideLoading = () => {
-      overlay.style.display = "none";
-      form.querySelector("button[type='submit']").disabled = false;
-    };
-
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      showLoading();
-
-      const formData = new FormData(form);
-      const data = {
-        OwnerName: formData.get("ownerName"),
-        Email: formData.get("email"),
-        PhoneNumber: formData.get("PhoneNumber"),
-        PetName: formData.get("petName"),
-        PetSpecies: formData.get("petSpecies"),
-        PetBreed: formData.get("petBreed"),
-        PetAge: formData.get("petAge"),
-        CheckInDate: formData.get("checkInDate"),
-        CheckOutDate: formData.get("checkOutDate"),
-        ArrivalTime: formData.get("arrivalTime")
+      const showLoading = () => {
+        overlay.style.display = "flex";
+        form.querySelector("button[type='submit']").disabled = true;
       };
 
-      try {
-        const response = await fetch(window.PETSTAY_CONFIG.NEW_BOOKING_API_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(data)
-        });
+      const hideLoading = () => {
+        overlay.style.display = "none";
+        form.querySelector("button[type='submit']").disabled = false;
+      };
 
-        if (!response.ok) throw new Error(`API error: ${response.status}`);
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        showLoading();
 
-        const result = await response.json();
-        const executionArn = result.executionArn?.trim();
-        if (!executionArn) throw new Error("No executionArn returned!");
+        const formData = new FormData(form);
+        const data = {
+          OwnerName: formData.get("ownerName"),
+          Email: formData.get("email"),
+          PhoneNumber: formData.get("PhoneNumber"),
+          PetName: formData.get("petName"),
+          PetSpecies: formData.get("petSpecies"),
+          PetBreed: formData.get("petBreed"),
+          PetAge: formData.get("petAge"),
+          CheckInDate: formData.get("checkInDate"),
+          CheckOutDate: formData.get("checkOutDate"),
+          ArrivalTime: formData.get("arrivalTime")
+        };
 
-        let tries = 0;
-        async function poll() {
-          tries++;
-          const url = `${window.PETSTAY_CONFIG.BOOKING_STATUS_API_URL}/${encodeURIComponent(executionArn)}`;
-          const statusRes = await fetch(url, { headers: { "Content-Type": "application/json" } });
+        try {
+          const response = await fetch(window.PETSTAY_CONFIG.NEW_BOOKING_API_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(data)
+          });
 
-          const contentType = statusRes.headers.get("content-type") || "";
-          if (!contentType.includes("application/json")) {
-            const preview = await statusRes.text();
-            throw new Error("Invalid response:\n" + preview.slice(0, 200));
+          if (!response.ok) throw new Error(`API error: ${response.status}`);
+
+          const result = await response.json();
+          const executionArn = result.executionArn?.trim();
+          if (!executionArn) throw new Error("No executionArn returned!");
+
+          let tries = 0;
+          async function poll() {
+            tries++;
+            const url = `${window.PETSTAY_CONFIG.BOOKING_STATUS_API_URL}/${encodeURIComponent(executionArn)}`;
+            const statusRes = await fetch(url, { headers: { "Content-Type": "application/json" } });
+
+            const contentType = statusRes.headers.get("content-type") || "";
+            let statusData;
+            if (contentType.includes("application/json")) {
+              statusData = await statusRes.json();
+            } else {
+              const preview = await statusRes.text();
+              throw new Error("Invalid non-JSON response:\n" + preview.slice(0, 200));
+            }
+
+            console.log("Polling result:", statusData);
+
+            if (statusData.status === "SUCCEEDED") {
+              if (statusData.output?.BookingID && statusData.output?.OwnerName) {
+                const BookingID = statusData.output.BookingID;
+                const OwnerName = statusData.output.OwnerName;
+
+                sessionStorage.setItem("BookingID", BookingID);
+                sessionStorage.setItem("OwnerName", OwnerName);
+                window.location.href = `booking-success.html?bookingId=${BookingID}`;
+              } else {
+                hideLoading();
+                alert("Booking succeeded, but response format is unexpected.");
+                console.warn("Unexpected SUCCEEDED format:", statusData);
+              }
+            } else if (statusData.status === "RUNNING" || statusData.status === "IN_PROGRESS") {
+              if (tries >= 30) {
+                hideLoading();
+                alert("Booking timed out.");
+              } else {
+                setTimeout(poll, 2000);
+              }
+            } else {
+              hideLoading();
+              alert(`Booking failed: ${statusData.status}`);
+            }
           }
 
-          const statusData = await statusRes.json();
-          console.log("Polling result:", statusData);
 
-          if (statusData.status === "SUCCEEDED") {
-            const BookingID = statusData.output.BookingID;
-            const OwnerName = statusData.output.OwnerName;
+          poll();
 
-            sessionStorage.setItem("BookingID", BookingID);
-            sessionStorage.setItem("OwnerName", OwnerName);
-            window.location.href = `booking-success.html?bookingId=${BookingID}`;
-          } else if (["FAILED", "TIMED_OUT", "ABORTED"].includes(statusData.status)) {
-            hideLoading();
-            alert(`Booking failed: ${statusData.status}`);
-          } else if (tries >= 30) {
-            hideLoading();
-            alert("Booking timed out.");
-          } else {
-            setTimeout(poll, 2000);
-          }
+        } catch (err) {
+          console.error(err);
+          alert("Booking failed: " + err.message);
+          hideLoading();
         }
-
-        poll();
-
-      } catch (err) {
-        console.error(err);
-        alert("Booking failed: " + err.message);
-        hideLoading();
-      }
+      });
     });
-  });
-</script>
+  </script>
 
 
 
- <!-- Footer -->
+
+  <!-- Footer -->
   <script src="../assets/js/bootstrap.bundle.min.js"></script>
   <script src="../assets/js/main.js"></script>
 </body>
