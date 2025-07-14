@@ -127,34 +127,37 @@
       ${checkInButtonHTML}`;
   }
 
-  function loginThenCheckIn() {
-    try {
-      const bookingId = new URLSearchParams(window.location.search).get("bookingId");
-      if (!bookingId) {
-        alert("Booking ID missing from URL. Cannot proceed to login.");
-        return;
-      }
-
-      sessionStorage.setItem("bookingId", bookingId);
-      sessionStorage.setItem("fromLogin", "1");
-
-      const checkInButton = document.getElementById("checkinButton");
-      if (checkInButton) {
-        checkInButton.disabled = true;
-        checkInButton.innerText = "Redirecting to login...";
-      }
-
-      const redirectUri = window.PETSTAY_CONFIG.REDIRECT_SIGN_IN_URL;
-      const loginURL = `https://${window.PETSTAY_CONFIG.COGNITO_DOMAIN}/login` +
-        `?client_id=${window.PETSTAY_CONFIG.COGNITO_USER_POOL_CLIENT_ID}` +
-        `&response_type=code&scope=email+openid+phone&redirect_uri=${encodeURIComponent(redirectUri)}`;
-
-      window.location.href = loginURL;
-    } catch (err) {
-      alert("An unexpected error occurred during login redirect.");
-      console.error(err);
+ function loginThenCheckIn() {
+  try {
+    const bookingId = new URLSearchParams(window.location.search).get("bookingId");
+    if (!bookingId) {
+      alert("Booking ID missing from URL. Cannot proceed to login.");
+      return;
     }
+
+    sessionStorage.setItem("bookingId", bookingId);
+    sessionStorage.setItem("fromLogin", "1");
+
+    const checkInButton = document.getElementById("checkinButton");
+    if (checkInButton) {
+      checkInButton.disabled = true;
+      checkInButton.innerText = "Redirecting to login...";
+    }
+
+    // HARD CODED redirect URI to ensure proper redirect to Cognito callback page
+    const redirectUri = "https://main.d3esln33qx1ws1.amplifyapp.com/admin-frontend/post-login.html";
+
+    const loginURL = `https://${window.PETSTAY_CONFIG.COGNITO_DOMAIN}/login` +
+      `?client_id=${window.PETSTAY_CONFIG.COGNITO_USER_POOL_CLIENT_ID}` +
+      `&response_type=code&scope=email+openid+phone&redirect_uri=${encodeURIComponent(redirectUri)}`;
+
+    window.location.href = loginURL;
+  } catch (err) {
+    alert("An unexpected error occurred during login redirect.");
+    console.error(err);
   }
+}
+
 
   async function checkInAfterLogin() {
     try {
