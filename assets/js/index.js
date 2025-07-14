@@ -13,7 +13,7 @@ document.getElementById('right-button')?.addEventListener('click', () => {
 
   const clientId = window.PETSTAY_CONFIG.COGNITO_USER_POOL_CLIENT_ID;
   const domain = window.PETSTAY_CONFIG.COGNITO_DOMAIN;
-  const redirectUri = encodeURIComponent(window.PETSTAY_CONFIG.REDIRECT_SIGN_IN_URL); // 👈 should point to post-login.html
+  const redirectUri = encodeURIComponent(window.PETSTAY_CONFIG.REDIRECT_ADMIN_SIGN_IN_URL);
 
   const loginUrl = `https://${domain}/login?client_id=${clientId}&response_type=code&scope=email+openid+phone&redirect_uri=${redirectUri}`;
 
