@@ -11,7 +11,7 @@
   <!-- Add this to <head> if you're using LineIcons -->
   <link href="https://cdn.lineicons.com/2.0/LineIcons.css" rel="stylesheet">
 
-<script src="/assets/js/config.js"></script>
+  <script src="/assets/js/config.js"></script>
 
 
 </head>
@@ -164,7 +164,7 @@
           return;
         }
 
-        const res = await fetch(`${window.PETSTAY_CONFIG.BOOKING_ACTION_BASE_URL}/${bookingId}/checkin`, {
+        fetch(`${window.PETSTAY_CONFIG.API_BASE_URL}/checkin/${bookingId}`, {
           method: "POST",
           headers: {
             Authorization: `Bearer ${session.getIdToken().getJwtToken()}`,

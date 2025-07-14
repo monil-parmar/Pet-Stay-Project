@@ -9,6 +9,8 @@ window.PETSTAY_CONFIG = {
 
   // API Base
   API_BASE_URL: 'https://24q261zi50.execute-api.us-east-1.amazonaws.com',
+  //BOOKING_ACTION_BASE_URL: "https://24q261zi50.execute-api.us-east-1.amazonaws.com",
+
 
   // Public GET APIs — used in customer-facing pages like checkin.html
   BOOKING_API_URL: 'https://24q261zi50.execute-api.us-east-1.amazonaws.com/booking',
