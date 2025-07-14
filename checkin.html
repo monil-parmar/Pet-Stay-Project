@@ -136,8 +136,7 @@ function loginThenCheckIn() {
   sessionStorage.setItem("fromLogin", "1");
 
   // ✅ Correct: dynamically redirect to checkin.html with booking info
-  const redirectUri = `${window.location.origin}/admin-frontend/checkin.html?bookingId=${bookingId}&fromLogin=1`;
-
+const redirectUri = `${window.location.origin}/checkin.html?bookingId=${bookingId}&fromLogin=1`;
   const loginURL = `https://${window.PETSTAY_CONFIG.COGNITO_DOMAIN}/login` +
     `?client_id=${window.PETSTAY_CONFIG.COGNITO_USER_POOL_CLIENT_ID}` +
     `&response_type=code&scope=email+openid+phone` +

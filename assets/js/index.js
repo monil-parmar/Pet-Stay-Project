@@ -9,15 +9,16 @@ document.getElementById('left-button')?.addEventListener('click', () => {
 
 // Redirect to Admin Login via Cognito Hosted UI
 document.getElementById('right-button')?.addEventListener('click', () => {
+  sessionStorage.setItem("adminLogin", "1"); // 🟡 Mark this as an admin login attempt
+
   const clientId = window.PETSTAY_CONFIG.COGNITO_USER_POOL_CLIENT_ID;
   const domain = window.PETSTAY_CONFIG.COGNITO_DOMAIN;
-  const redirectUri = encodeURIComponent(window.PETSTAY_CONFIG.REDIRECT_SIGN_IN_URL);
+  const redirectUri = encodeURIComponent(window.PETSTAY_CONFIG.REDIRECT_SIGN_IN_URL); // 👈 should point to post-login.html
 
   const loginUrl = `https://${domain}/login?client_id=${clientId}&response_type=code&scope=email+openid+phone&redirect_uri=${redirectUri}`;
 
   window.location.href = loginUrl;
 });
-
 
 // Hover effect logic for split landing page
 const content = document.querySelector(".content");

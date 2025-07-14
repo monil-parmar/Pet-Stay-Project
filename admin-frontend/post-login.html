@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <title>Redirecting...</title>
@@ -13,6 +14,7 @@
     }
   </style>
 </head>
+
 <body>
   <h2>Logging you in... Please wait.</h2>
 
@@ -65,6 +67,7 @@
       const urlParams = new URLSearchParams(window.location.search);
       const bookingId = sessionStorage.getItem("bookingId") || urlParams.get("bookingId");
       const fromLogin = sessionStorage.getItem("fromLogin") || urlParams.get("fromLogin");
+      const adminLogin = sessionStorage.getItem("adminLogin");
 
       const allowedStaff = ["petstayteam@outlook.com", "petstayteam@gmail.com"];
       const normalizedAllowed = allowedStaff.map(e => e.trim().toLowerCase());
@@ -76,11 +79,16 @@
         return;
       }
 
-      // ✅ Redirect cleanly — bookingId and fromLogin are already in sessionStorage
+      // 🧠 Smart redirection logic
       if (fromLogin === "1" && bookingId) {
-        window.location.href = "/admin-frontend/checkin.html";
-      } else {
+        sessionStorage.removeItem("fromLogin");
+        sessionStorage.removeItem("bookingId");
+        window.location.href = `/checkin.html?bookingId=${bookingId}&fromLogin=1`;
+      } else if (adminLogin === "1") {
+        sessionStorage.removeItem("adminLogin");
         window.location.href = "/admin-frontend/admin_dashboard.html";
+      } else {
+        window.location.href = "/";
       }
 
     } catch (err) {
@@ -91,5 +99,7 @@
   });
 </script>
 
+
 </body>
+
 </html>
