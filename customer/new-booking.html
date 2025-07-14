@@ -198,47 +198,55 @@
           if (!executionArn) throw new Error("No executionArn returned!");
 
           let tries = 0;
+          const maxTries = 30;
+
           async function poll() {
             tries++;
             const url = `${window.PETSTAY_CONFIG.BOOKING_STATUS_API_URL}/${encodeURIComponent(executionArn)}`;
-            const statusRes = await fetch(url, { headers: { "Content-Type": "application/json" } });
 
-            const contentType = statusRes.headers.get("content-type") || "";
-            let statusData;
-            if (contentType.includes("application/json")) {
-              statusData = await statusRes.json();
-            } else {
-              const preview = await statusRes.text();
-              throw new Error("Invalid non-JSON response:\n" + preview.slice(0, 200));
-            }
+            try {
+              const statusRes = await fetch(url);
 
-            console.log("Polling result:", statusData);
+              let statusData;
+              try {
+                statusData = await statusRes.json();
+              } catch (jsonErr) {
+                const raw = await statusRes.text();
+                throw new Error("Failed to parse JSON. Raw response:\n" + raw.slice(0, 200));
+              }
 
-            if (statusData.status === "SUCCEEDED") {
-              if (statusData.output?.BookingID && statusData.output?.OwnerName) {
-                const BookingID = statusData.output.BookingID;
-                const OwnerName = statusData.output.OwnerName;
+              console.log(`Polling attempt ${tries}:`, statusData);
 
-                sessionStorage.setItem("BookingID", BookingID);
-                sessionStorage.setItem("OwnerName", OwnerName);
-                window.location.href = `booking-success.html?bookingId=${BookingID}`;
+              const status = statusData.status?.toUpperCase();
+              if (status === "SUCCEEDED") {
+                const { BookingID, OwnerName } = statusData.output || {};
+                if (BookingID && OwnerName) {
+                  sessionStorage.setItem("BookingID", BookingID);
+                  sessionStorage.setItem("OwnerName", OwnerName);
+                  window.location.href = `booking-success.html?bookingId=${BookingID}`;
+                } else {
+                  hideLoading();
+                  alert("Booking succeeded, but booking ID or owner name is missing.");
+                }
+              } else if (status === "RUNNING" || status === "IN_PROGRESS") {
+                if (tries >= maxTries) {
+                  hideLoading();
+                  alert("Booking timed out. Please try again.");
+                } else {
+                  setTimeout(poll, 2000);
+                }
               } else {
                 hideLoading();
-                alert("Booking succeeded, but response format is unexpected.");
-                console.warn("Unexpected SUCCEEDED format:", statusData);
+                alert(`Booking failed with status: ${status}`);
               }
-            } else if (statusData.status === "RUNNING" || statusData.status === "IN_PROGRESS") {
-              if (tries >= 30) {
-                hideLoading();
-                alert("Booking timed out.");
-              } else {
-                setTimeout(poll, 2000);
-              }
-            } else {
+
+            } catch (err) {
               hideLoading();
-              alert(`Booking failed: ${statusData.status}`);
+              console.error("Polling error:", err);
+              alert("Error while checking booking status:\n" + err.message);
             }
           }
+
 
 
           poll();
