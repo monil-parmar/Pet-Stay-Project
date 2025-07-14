@@ -131,11 +131,12 @@ function loginThenCheckIn() {
     return;
   }
 
-  // ✅ Store values in sessionStorage instead of passing them in redirect_uri
+  // ✅ Store values in sessionStorage (optional redundancy)
   sessionStorage.setItem("bookingId", bookingId);
   sessionStorage.setItem("fromLogin", "1");
 
-  const redirectUri = window.PETSTAY_CONFIG.REDIRECT_SIGN_IN_URL;
+  // ✅ Correct: dynamically redirect to checkin.html with booking info
+  const redirectUri = `${window.location.origin}/admin-frontend/checkin.html?bookingId=${bookingId}&fromLogin=1`;
 
   const loginURL = `https://${window.PETSTAY_CONFIG.COGNITO_DOMAIN}/login` +
     `?client_id=${window.PETSTAY_CONFIG.COGNITO_USER_POOL_CLIENT_ID}` +
