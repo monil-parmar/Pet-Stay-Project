@@ -175,13 +175,15 @@ async function checkInAfterLogin() {
     const bookingId = sessionStorage.getItem("bookingId") || new URLSearchParams(window.location.search).get("bookingId");
     if (!bookingId) return alert("Booking ID missing. Cannot perform check-in.");
 
-    const res = await fetch(`${window.PETSTAY_CONFIG.CHECKIN_BOOKING_URL}/${bookingId}/checkin`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${session.getIdToken().getJwtToken()}`,
-        'Content-Type': 'application/json'
-      }
-    });
+const res = await fetch(`${window.PETSTAY_CONFIG.CHECKIN_BOOKING_URL}/checkin`, {
+  method: "POST",
+  headers: {
+    Authorization: `Bearer ${session.getIdToken().getJwtToken()}`,
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({ bookingId })
+});
+
 
     const result = await res.json();
 
