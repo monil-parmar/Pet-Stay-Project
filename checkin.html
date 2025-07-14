@@ -144,8 +144,7 @@
       checkInButton.innerText = "Redirecting to login...";
     }
 
-    // HARD CODED redirect URI to ensure proper redirect to Cognito callback page
-    const redirectUri = "https://main.d3esln33qx1ws1.amplifyapp.com/admin-frontend/post-login.html";
+    const redirectUri = window.PETSTAY_CONFIG.REDIRECT_ADMIN_SIGN_IN_URL;
 
     const loginURL = `https://${window.PETSTAY_CONFIG.COGNITO_DOMAIN}/login` +
       `?client_id=${window.PETSTAY_CONFIG.COGNITO_USER_POOL_CLIENT_ID}` +
@@ -157,7 +156,6 @@
     console.error(err);
   }
 }
-
 
   async function checkInAfterLogin() {
     try {
@@ -232,5 +230,6 @@
 
   window.loginThenCheckIn = loginThenCheckIn;
 </script>
+
 </body>
 </html>

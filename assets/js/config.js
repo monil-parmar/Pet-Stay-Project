@@ -6,7 +6,8 @@ window.PETSTAY_CONFIG = {
   COGNITO_DOMAIN: 'us-east-1qixgkkfzg.auth.us-east-1.amazoncognito.com',
   REDIRECT_SIGN_IN_URL: 'https://main.d3esln33qx1ws1.amplifyapp.com/admin-frontend/post-login.html',
   REDIRECT_SIGN_OUT_URL: 'https://main.d3esln33qx1ws1.amplifyapp.com/index.html',
-
+// Optional: Separate dashboard login, used by admin-only login pages (not required for QR)
+  REDIRECT_ADMIN_SIGN_IN_URL: 'https://main.d3esln33qx1ws1.amplifyapp.com/admin-frontend/post-login.html',
   // API Base
   API_BASE_URL: 'https://24q261zi50.execute-api.us-east-1.amazonaws.com',
   //BOOKING_ACTION_BASE_URL: "https://24q261zi50.execute-api.us-east-1.amazonaws.com",
