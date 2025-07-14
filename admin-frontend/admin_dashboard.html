@@ -401,7 +401,8 @@
               <td>
                 ${b.QRCodeURL ? `
                   <div style="text-align: center;">
-                    <a href="/admin-frontend/checkin/?bookingId=${b.BookingID}&fromLogin=1" target="_blank">
+                    <a href="/admin-frontend/checkin/?bookingId=${b.BookingID}" target="_blank">
+
                       <img 
                         src="${b.QRCodeURL}" 
                         alt="QR Code"
