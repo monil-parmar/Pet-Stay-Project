@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8">
   <title>PetStay Check-In</title>
@@ -28,11 +27,6 @@
   </div>
 
 <script>
-  if (!window.location.search.includes("code=") && !document.referrer.includes("amazoncognito.com")) {
-    sessionStorage.removeItem("fromLogin");
-    sessionStorage.removeItem("bookingId");
-  }
-
   const allowedStaffEmails = window.PETSTAY_CONFIG.ALLOWED_STAFF_EMAILS || [
     "petstayteam@outlook.com", "petstayteam@gmail.com"
   ];
@@ -41,31 +35,15 @@
 
   document.addEventListener("DOMContentLoaded", async function () {
     const { default: Amplify, Auth } = window.aws_amplify;
-
-    if (!Amplify || !Amplify.configure) {
-      console.error("AWS Amplify not available.");
-    } else {
-      Amplify.configure({
-        Auth: {
-          region: window.PETSTAY_CONFIG.AWS_REGION,
-          userPoolId: window.PETSTAY_CONFIG.COGNITO_USER_POOL_ID,
-          userPoolWebClientId: window.PETSTAY_CONFIG.COGNITO_USER_POOL_CLIENT_ID,
-          oauth: {
-            domain: window.PETSTAY_CONFIG.COGNITO_DOMAIN,
-            scope: ['email', 'openid', 'phone'],
-            redirectSignIn: window.PETSTAY_CONFIG.REDIRECT_SIGN_IN_URL,
-            redirectSignOut: window.PETSTAY_CONFIG.REDIRECT_SIGN_OUT_URL,
-            responseType: 'code'
-          }
-        }
-      });
-    }
-
     const urlParams = new URLSearchParams(window.location.search);
-    urlParams.delete('status');
-    window.history.replaceState({}, document.title, `${window.location.pathname}?${urlParams}`);
-
+    
+    // Fallbacks from sessionStorage
     bookingId = urlParams.get('bookingId') || sessionStorage.getItem('bookingId');
+    const fromLogin = urlParams.get('fromLogin') || sessionStorage.getItem('fromLogin');
+
+    // Clean up status param in URL if exists
+    urlParams.delete('status');
+    window.history.replaceState({}, document.title, `${window.location.pathname}?bookingId=${bookingId}`);
 
     if (!bookingId) {
       document.getElementById("result").innerHTML = `
@@ -74,12 +52,31 @@
       return;
     }
 
+    // Amplify init
+    if (!Amplify || !Amplify.configure) {
+      console.error("AWS Amplify not available.");
+      return;
+    }
+
+    Amplify.configure({
+      Auth: {
+        region: window.PETSTAY_CONFIG.AWS_REGION,
+        userPoolId: window.PETSTAY_CONFIG.COGNITO_USER_POOL_ID,
+        userPoolWebClientId: window.PETSTAY_CONFIG.COGNITO_USER_POOL_CLIENT_ID,
+        oauth: {
+          domain: window.PETSTAY_CONFIG.COGNITO_DOMAIN,
+          scope: ['email', 'openid', 'phone'],
+          redirectSignIn: window.PETSTAY_CONFIG.REDIRECT_SIGN_IN_URL,
+          redirectSignOut: window.PETSTAY_CONFIG.REDIRECT_SIGN_OUT_URL,
+          responseType: 'code'
+        }
+      }
+    });
+
     await fetchBookingDetails(bookingId);
 
-    const fromLogin = urlParams.get("fromLogin") || sessionStorage.getItem('fromLogin');
     if (fromLogin === "1") {
       await checkInAfterLogin();
-      sessionStorage.removeItem("fromLogin");
     }
   });
 
@@ -93,7 +90,7 @@
       } else {
         document.getElementById("result").innerHTML = "<span class='text-danger'>No booking found.</span>";
       }
-    } catch (err) {
+    } catch {
       document.getElementById("result").innerHTML = "<span class='text-danger'>Failed to load booking info.</span>";
     }
   }
@@ -127,8 +124,7 @@
       ${checkInButtonHTML}`;
   }
 
- function loginThenCheckIn() {
-  try {
+  function loginThenCheckIn() {
     const bookingId = new URLSearchParams(window.location.search).get("bookingId");
     if (!bookingId) {
       alert("Booking ID missing from URL. Cannot proceed to login.");
@@ -144,25 +140,20 @@
       checkInButton.innerText = "Redirecting to login...";
     }
 
-    const redirectUri = window.PETSTAY_CONFIG.REDIRECT_ADMIN_SIGN_IN_URL;
-
     const loginURL = `https://${window.PETSTAY_CONFIG.COGNITO_DOMAIN}/login` +
       `?client_id=${window.PETSTAY_CONFIG.COGNITO_USER_POOL_CLIENT_ID}` +
-      `&response_type=code&scope=email+openid+phone&redirect_uri=${encodeURIComponent(redirectUri)}`;
+      `&response_type=code&scope=email+openid+phone` +
+      `&redirect_uri=${encodeURIComponent(window.PETSTAY_CONFIG.REDIRECT_SIGN_IN_URL)}`;
 
     window.location.href = loginURL;
-  } catch (err) {
-    alert("An unexpected error occurred during login redirect.");
-    console.error(err);
   }
-}
 
   async function checkInAfterLogin() {
     try {
       const { Auth } = window.aws_amplify;
       const user = await Auth.currentAuthenticatedUser({ bypassCache: true });
 
-      let session = null;
+      let session;
       for (let i = 0; i < 5; i++) {
         try {
           session = await Auth.currentSession();
@@ -181,7 +172,7 @@
         return;
       }
 
-      const bookingId = new URLSearchParams(window.location.search).get("bookingId");
+      const bookingId = sessionStorage.getItem("bookingId") || new URLSearchParams(window.location.search).get("bookingId");
       if (!bookingId) return alert("Booking ID missing. Cannot perform check-in.");
 
       const res = await fetch(`${window.PETSTAY_CONFIG.CHECKIN_BOOKING_URL}/${bookingId}/checkin`, {
@@ -214,9 +205,12 @@
         sessionStorage.removeItem("fromLogin");
         sessionStorage.removeItem("bookingId");
 
+        // Clean URL (no ?fromLogin)
         setTimeout(() => {
-          window.location.href = `${window.location.pathname}?bookingId=${bookingId}`;
-        }, 1500);
+          history.replaceState({}, document.title, `${window.location.pathname}?bookingId=${bookingId}`);
+          const toast = new bootstrap.Toast(document.getElementById("checkinToast"));
+          toast.show();
+        }, 1000);
       } else {
         alert("Check-in failed: " + (result.message || "Unknown error"));
         await fetchBookingDetails(bookingId);
@@ -230,6 +224,5 @@
 
   window.loginThenCheckIn = loginThenCheckIn;
 </script>
-
 </body>
 </html>
