@@ -399,26 +399,35 @@
     });
   }
 
- // === ACTION FUNCTIONS (Unified using BOOKING_ACTION_BASE_URL) ===
-async function getAuthToken() {
-  const session = await Amplify.Auth.currentSession();
-  return session.getIdToken().getJwtToken();
-}
-
 async function performBookingAction(id, action, confirmMessage, successMessage, errorMessage) {
   if (!confirm(confirmMessage)) return;
+
+  const actionUrlMap = {
+    confirm: window.PETSTAY_CONFIG.CONFIRM_BOOKING_URL,
+    cancel: window.PETSTAY_CONFIG.CANCEL_BOOKING_URL,
+    checkin: window.PETSTAY_CONFIG.CHECKIN_BOOKING_URL,
+    checkout: window.PETSTAY_CONFIG.CHECKOUT_BOOKING_URL,
+    restore: window.PETSTAY_CONFIG.RESTORE_BOOKING_URL
+  };
+
   try {
     const token = await getAuthToken();
-    const res = await fetch(`${window.PETSTAY_CONFIG.BOOKING_ACTION_BASE_URL}/${id}/${action}`, {
+    const res = await fetch(actionUrlMap[action], {
       method: "POST",
-      headers: { Authorization: `Bearer ${token}` }
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ bookingId: id })
     });
+
     const data = await res.json();
+    if (!res.ok) throw new Error(data.message || errorMessage);
     showToast(data.message || successMessage);
     await loadBookings();
   } catch (err) {
     showToast(errorMessage, true);
-    console.error(err);
+    console.error("Booking action failed:", err);
   }
 }
 

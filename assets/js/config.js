@@ -11,19 +11,22 @@ window.PETSTAY_CONFIG = {
   API_BASE_URL: 'https://24q261zi50.execute-api.us-east-1.amazonaws.com',
 
   // Public GET APIs — used in customer-facing pages like checkin.html
-  BOOKING_API_URL: 'https://24q261zi50.execute-api.us-east-1.amazonaws.com/booking',             // GET /booking/{bookingId}
-  BOOKING_STATUS_API_URL: 'https://24q261zi50.execute-api.us-east-1.amazonaws.com/bookingStatus', // GET /bookingStatus/{executionArn}
+  BOOKING_API_URL: 'https://24q261zi50.execute-api.us-east-1.amazonaws.com/booking',
+  BOOKING_STATUS_API_URL: 'https://24q261zi50.execute-api.us-east-1.amazonaws.com/bookingStatus',
 
   // Admin Dashboard GET APIs
-  BOOKINGS_API_URL: 'https://24q261zi50.execute-api.us-east-1.amazonaws.com/bookings',           // GET /bookings
+  BOOKINGS_API_URL: 'https://24q261zi50.execute-api.us-east-1.amazonaws.com/bookings',
   ROOMS_AVAILABILITY_API_URL: 'https://24q261zi50.execute-api.us-east-1.amazonaws.com/rooms/availability',
 
   // New Booking (Step Functions)
-  NEW_BOOKING_API_URL: 'https://24q261zi50.execute-api.us-east-1.amazonaws.com/newbooking',      // POST /newbooking
+  NEW_BOOKING_API_URL: 'https://24q261zi50.execute-api.us-east-1.amazonaws.com/newbooking',
 
-  // Unified Admin Booking Action Base URL — POST to /booking/{id}/{action}
-  BOOKING_ACTION_BASE_URL: 'https://24q261zi50.execute-api.us-east-1.amazonaws.com/booking'
-  
+  // Unified Admin Booking Action APIs — explicit paths
+  CONFIRM_BOOKING_URL: 'https://24q261zi50.execute-api.us-east-1.amazonaws.com/confirm',
+  CANCEL_BOOKING_URL: 'https://24q261zi50.execute-api.us-east-1.amazonaws.com/cancel',
+  CHECKIN_BOOKING_URL: 'https://24q261zi50.execute-api.us-east-1.amazonaws.com/checkin',
+  CHECKOUT_BOOKING_URL: 'https://24q261zi50.execute-api.us-east-1.amazonaws.com/checkout',
+  RESTORE_BOOKING_URL: 'https://24q261zi50.execute-api.us-east-1.amazonaws.com/restore'
 };
 
 // Safety check
