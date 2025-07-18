@@ -26,6 +26,7 @@
         return;
       }
 
+      // ✅ Configure Amplify
       Amplify.configure({
         Auth: {
           region: window.PETSTAY_CONFIG.AWS_REGION,
@@ -42,15 +43,14 @@
       });
 
       try {
-        const user = await Auth.currentAuthenticatedUser({ bypassCache: true });
-
-        let session;
+        // ✅ Wait for session to be established after OAuth redirect
+        let session = null;
         for (let i = 0; i < 5; i++) {
           try {
             session = await Auth.currentSession();
             break;
           } catch {
-            await new Promise(r => setTimeout(r, 1000));
+            await new Promise(r => setTimeout(r, 800));
           }
         }
 
@@ -58,6 +58,9 @@
           alert("Session could not be established. Please refresh and try again.");
           return;
         }
+
+        // ✅ Now get user
+        const user = await Auth.currentAuthenticatedUser({ bypassCache: true });
 
         const idToken = session.getIdToken();
         const email = (idToken.payload.email || idToken.payload["cognito:username"] || "unknown").toLowerCase();
@@ -72,7 +75,7 @@
         const allowedStaff = ["petstayteam@outlook.com", "petstayteam@gmail.com"];
         const normalizedAllowed = allowedStaff.map(e => e.trim().toLowerCase());
 
-        // 🔐 Only check for staff access if it's the check-in flow
+        // 🔐 Check-in flow
         if (fromLogin === "1") {
           if (!normalizedAllowed.includes(email)) {
             alert(`You (${email}) are not authorized to check in guests.`);
@@ -89,6 +92,7 @@
           }
         }
 
+        // 🛠 Admin flow
         if (adminLogin === "1") {
           sessionStorage.removeItem("adminLogin");
           window.location.href = "/admin-frontend/admin_dashboard.html";
