@@ -4,10 +4,6 @@ window.PETSTAY_CONFIG = {
   COGNITO_USER_POOL_CLIENT_ID: '7pk31b8a5ak2b7aj42qimaibhc',
   COGNITO_DOMAIN: 'us-east-1qixgkkfzg.auth.us-east-1.amazoncognito.com',
 
-  // REDIRECT_SIGN_IN_URL: 'https://main.d3esln33qx1ws1.amplifyapp.com/checkin.html',
-  // REDIRECT_SIGN_OUT_URL: 'https://main.d3esln33qx1ws1.amplifyapp.com/index.html',
-  // REDIRECT_ADMIN_SIGN_IN_URL: 'https://main.d3esln33qx1ws1.amplifyapp.com/admin-frontend/post-login.html',
-
   REDIRECT_SIGN_IN_URL: 'https://main.d3esln33qx1ws1.amplifyapp.com/admin-frontend/post-login.html',
   REDIRECT_ADMIN_SIGN_IN_URL: 'https://main.d3esln33qx1ws1.amplifyapp.com/admin-frontend/post-login.html',
   REDIRECT_SIGN_OUT_URL: 'https://main.d3esln33qx1ws1.amplifyapp.com/index.html',
@@ -22,7 +18,9 @@ window.PETSTAY_CONFIG = {
   CANCEL_BOOKING_URL: 'https://24q261zi50.execute-api.us-east-1.amazonaws.com/cancel',
   CHECKIN_BOOKING_URL: 'https://24q261zi50.execute-api.us-east-1.amazonaws.com/checkin',
   CHECKOUT_BOOKING_URL: 'https://24q261zi50.execute-api.us-east-1.amazonaws.com/checkout',
-  RESTORE_BOOKING_URL: 'https://24q261zi50.execute-api.us-east-1.amazonaws.com/restore'
+  RESTORE_BOOKING_URL: 'https://24q261zi50.execute-api.us-east-1.amazonaws.com/restore',
+  PET_PHOTO_UPLOAD_URL: 'https://24q261zi50.execute-api.us-east-1.amazonaws.com/upload-url',
+  PET_PHOTO_PUBLIC_URL_BASE: 'https://petstay-pet-photos-101486688.s3.amazonaws.com'
 };
 
 for (const key in window.PETSTAY_CONFIG) {
