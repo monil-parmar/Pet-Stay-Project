@@ -354,7 +354,6 @@
           case "Cancelled": statusClass = "bg-danger"; break;
           default: statusClass = "bg-secondary";
         }
-
         tbody.innerHTML += `
 <tr>
   <td>${index + 1}</td>
@@ -362,52 +361,55 @@
   <td>${b.PetName}</td>
   <td>${b.PetSpecies || "N/A"}</td>
   <td>
-  ${b.PetPhotoURL ? `
-    <a href="${b.PetPhotoURL}" target="_blank">
-      <img src="${b.PetPhotoURL}" 
-           alt="${b.PetName}" 
-           style="width: 50px; height: 50px; object-fit: cover; border-radius: 6px; border: 1px solid #ccc;" 
-           onerror="this.style.display='none'" />
-    </a>
-  ` : 'N/A'}
-</td>
+    ${b.PetPhotoURL ? `
+      <a href="${b.PetPhotoURL}" target="_blank">
+        <img src="${b.PetPhotoURL}" 
+             alt="${b.PetName}" 
+             style="width: 50px; height: 50px; object-fit: cover; border-radius: 6px; border: 1px solid #ccc; display: block; margin: 0 auto;" 
+             onerror="this.style.display='none'" />
+      </a>
+    ` : 'N/A'}
+  </td>
   <td>${b.PetBreed || "N/A"}</td>
   <td>${b.PetAge || "N/A"}</td>
   <td>${b.CheckInDate}</td>
   <td>${b.CheckOutDate}</td>
-  <td><span class="status-btn ${statusClass}">${b.Status}</span></td>
   <td>
-    <div class="action">
-      <button class="text-primary" title="View Details" onclick='viewBooking(${JSON.stringify(b)})'>
-        <span class="material-icons">visibility</span>
+    <span class="badge ${statusClass} text-white px-3 py-2 rounded-pill d-inline-block w-100 text-center">${b.Status}</span>
+  </td>
+  <td>
+    <div class="d-flex justify-content-center gap-2">
+      <button class="btn btn-sm btn-outline-primary" title="View Details" onclick='viewBooking(${JSON.stringify(b)})'>
+        <i class="material-icons">visibility</i>
       </button>
       ${!showRestore ? `
-      <button class="text-danger" title="Cancel Booking" onclick="cancelBooking('${b.BookingID}')">
-        <span class="material-icons">delete</span>
+      <button class="btn btn-sm btn-outline-danger" title="Cancel Booking" onclick="cancelBooking('${b.BookingID}')">
+        <i class="material-icons">delete</i>
       </button>` : ""}
       ${showConfirm ? `
-      <button class="text-warning" title="Confirm Booking" onclick="confirmBooking('${b.BookingID}')">
-        <span class="material-icons">check_circle</span>
+      <button class="btn btn-sm btn-outline-warning" title="Confirm Booking" onclick="confirmBooking('${b.BookingID}')">
+        <i class="material-icons">check_circle</i>
       </button>` : ""}
       ${showCheckIn ? `
-      <button class="text-info" title="Check In" onclick="checkinBooking('${b.BookingID}')">
-        <span class="material-icons">login</span>
+      <button class="btn btn-sm btn-outline-info" title="Check In" onclick="checkinBooking('${b.BookingID}')">
+        <i class="material-icons">login</i>
       </button>` : ""}
       ${showCheckout ? `
-      <button class="text-success" title="Check Out" onclick="checkoutBooking('${b.BookingID}')">
-        <span class="material-icons">logout</span>
+      <button class="btn btn-sm btn-outline-success" title="Check Out" onclick="checkoutBooking('${b.BookingID}')">
+        <i class="material-icons">logout</i>
       </button>` : ""}
       ${showRestore ? `
-      <button class="text-info" title="Restore Booking" onclick="restoreBooking('${b.BookingID}')">
-        <span class="material-icons">restore</span>
+      <button class="btn btn-sm btn-outline-info" title="Restore Booking" onclick="restoreBooking('${b.BookingID}')">
+        <i class="material-icons">restore</i>
       </button>` : ""}
       ${showQR ? `
-      <button class="text-secondary" title="View QR Code" data-url="${b.QRCodeURL || 'data:image/png;base64,' + b.QRBase64}" onclick="showQRModal(this)">
-        <span class="material-icons">qr_code</span>
+      <button class="btn btn-sm btn-outline-secondary" title="View QR Code" data-url="${b.QRCodeURL || 'data:image/png;base64,' + b.QRBase64}" onclick="showQRModal(this)">
+        <i class="material-icons">qr_code</i>
       </button>` : ""}
     </div>
   </td>
 </tr>`;
+
       });
     }
 
