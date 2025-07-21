@@ -360,53 +360,48 @@
   <td>${b.OwnerName}</td>
   <td>${b.PetName}</td>
   <td>${b.PetSpecies || "N/A"}</td>
-  <td>
+  <td class="text-center">
     ${b.PetPhotoURL ? `
-      <a href="${b.PetPhotoURL}" target="_blank">
-        <img src="${b.PetPhotoURL}" 
-             alt="${b.PetName}" 
-             style="width: 50px; height: 50px; object-fit: cover; border-radius: 6px; border: 1px solid #ccc; display: block; margin: 0 auto;" 
-             onerror="this.style.display='none'" />
-      </a>
-    ` : 'N/A'}
+      <img src="${b.PetPhotoURL}" 
+           alt="${b.PetName}" 
+           style="width: 45px; height: 45px; object-fit: cover; border-radius: 5px; border: 1px solid #ddd;" />`
+            : "N/A"}
   </td>
   <td>${b.PetBreed || "N/A"}</td>
   <td>${b.PetAge || "N/A"}</td>
   <td>${b.CheckInDate}</td>
   <td>${b.CheckOutDate}</td>
   <td>
-    <span class="badge ${statusClass} text-white px-3 py-2 rounded-pill d-inline-block w-100 text-center">${b.Status}</span>
+    <span class="badge ${statusClass} px-3 py-1 text-white">${b.Status}</span>
   </td>
-  <td>
-    <div class="d-flex justify-content-center gap-2">
-      <button class="btn btn-sm btn-outline-primary" title="View Details" onclick='viewBooking(${JSON.stringify(b)})'>
-        <i class="material-icons">visibility</i>
-      </button>
-      ${!showRestore ? `
-      <button class="btn btn-sm btn-outline-danger" title="Cancel Booking" onclick="cancelBooking('${b.BookingID}')">
-        <i class="material-icons">delete</i>
-      </button>` : ""}
-      ${showConfirm ? `
-      <button class="btn btn-sm btn-outline-warning" title="Confirm Booking" onclick="confirmBooking('${b.BookingID}')">
-        <i class="material-icons">check_circle</i>
-      </button>` : ""}
-      ${showCheckIn ? `
-      <button class="btn btn-sm btn-outline-info" title="Check In" onclick="checkinBooking('${b.BookingID}')">
-        <i class="material-icons">login</i>
-      </button>` : ""}
-      ${showCheckout ? `
-      <button class="btn btn-sm btn-outline-success" title="Check Out" onclick="checkoutBooking('${b.BookingID}')">
-        <i class="material-icons">logout</i>
-      </button>` : ""}
-      ${showRestore ? `
-      <button class="btn btn-sm btn-outline-info" title="Restore Booking" onclick="restoreBooking('${b.BookingID}')">
-        <i class="material-icons">restore</i>
-      </button>` : ""}
-      ${showQR ? `
-      <button class="btn btn-sm btn-outline-secondary" title="View QR Code" data-url="${b.QRCodeURL || 'data:image/png;base64,' + b.QRBase64}" onclick="showQRModal(this)">
-        <i class="material-icons">qr_code</i>
-      </button>` : ""}
-    </div>
+  <td style="white-space: nowrap;">
+    <button class="btn btn-sm btn-light" title="View Details" onclick='viewBooking(${JSON.stringify(b)})'>
+      <i class="material-icons">visibility</i>
+    </button>
+    ${!showRestore ? `
+    <button class="btn btn-sm btn-light text-danger" title="Cancel Booking" onclick="cancelBooking('${b.BookingID}')">
+      <i class="material-icons">delete</i>
+    </button>` : ""}
+    ${showConfirm ? `
+    <button class="btn btn-sm btn-light text-warning" title="Confirm Booking" onclick="confirmBooking('${b.BookingID}')">
+      <i class="material-icons">check_circle</i>
+    </button>` : ""}
+    ${showCheckIn ? `
+    <button class="btn btn-sm btn-light text-info" title="Check In" onclick="checkinBooking('${b.BookingID}')">
+      <i class="material-icons">login</i>
+    </button>` : ""}
+    ${showCheckout ? `
+    <button class="btn btn-sm btn-light text-success" title="Check Out" onclick="checkoutBooking('${b.BookingID}')">
+      <i class="material-icons">logout</i>
+    </button>` : ""}
+    ${showRestore ? `
+    <button class="btn btn-sm btn-light text-info" title="Restore Booking" onclick="restoreBooking('${b.BookingID}')">
+      <i class="material-icons">restore</i>
+    </button>` : ""}
+    ${showQR ? `
+    <button class="btn btn-sm btn-light text-secondary" title="QR Code" data-url="${b.QRCodeURL || 'data:image/png;base64,' + b.QRBase64}" onclick="showQRModal(this)">
+      <i class="material-icons">qr_code</i>
+    </button>` : ""}
   </td>
 </tr>`;
 

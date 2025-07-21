@@ -6127,3 +6127,8 @@ h6,
   padding: 4px;
   background: #fff;
 }
+
+
+table.table td {
+  vertical-align: middle;
+}
