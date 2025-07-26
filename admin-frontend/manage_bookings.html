@@ -126,7 +126,6 @@
     <!-- ========== table components start ========== -->
     <section class="table-components">
       <div class="container-fluid">
-        <!-- ========== title-wrapper start ========== -->
         <div class="title-wrapper pt-30">
           <div class="row align-items-center">
             <div class="col-md-6">
@@ -134,7 +133,6 @@
                 <h2>Manage Bookings</h2>
               </div>
             </div>
-            <!-- end col -->
             <div class="col-md-6">
               <div class="breadcrumb-wrapper">
                 <nav aria-label="breadcrumb">
@@ -174,42 +172,45 @@
               </select>
             </div>
           </div>
-
-          <!-- Table Container -->
-          <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>Pet</th>
-                  <th>Owner</th>
-                  <th>Status</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody id="bookingsTableBody">
-                <!-- Dynamically injected by JS -->
-              </tbody>
-            </table>
+          <div class="row mt-4">
+            <div class="col-lg-12">
+              <div class="card-style mb-30">
+                <div class="title d-flex justify-content-between align-items-center mb-3">
+                  <h6 class="text-medium">All Bookings</h6>
+                </div>
+                <div class="table-responsive">
+                  <table class="table top-selling-table">
+                    <thead>
+                      <tr>
+                        <th>#</th>
+                        <th>Pet</th>
+                        <th>Owner</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody id="bookingsTableBody">
+                      <!-- Dynamically injected by JS -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
           </div>
+
 
         </div>
 
-
-        <!-- Booking Details Drawer -->
-        <div class="offcanvas offcanvas-end" tabindex="-1" id="bookingDrawer" aria-labelledby="bookingDrawerLabel">
-          <div class="offcanvas-header">
-            <h5 id="bookingDrawerLabel" class="offcanvas-title">Booking Details</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-          </div>
-          <div class="offcanvas-body" id="drawerContent">
-            <!-- Booking info injected here -->
-          </div>
-          <div class="text-end mt-4">
-            <button class="btn btn-outline-secondary" data-bs-dismiss="offcanvas">Close</button>
-          </div>
-        </div>
-
+        
+<div class="offcanvas offcanvas-end" tabindex="-1" id="bookingDrawer" aria-labelledby="bookingDrawerLabel">
+  <div class="offcanvas-header">
+    <h5 id="bookingDrawerLabel">Booking Details</h5>
+    <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+  </div>
+  <div class="offcanvas-body" id="drawerContent">
+    <!-- Dynamic content injected by JS -->
+  </div>
+</div>
 
         <!-- Toast Container -->
         <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
@@ -477,7 +478,7 @@
     <p><strong>Age:</strong> ${b.PetAge || "N/A"}</p>
     <p><strong>Species:</strong> ${b.PetSpecies || "N/A"}</p>
     <hr class="my-3">
-    
+
 
     <h6 class="fw-bold">Booking Info</h6>
     <p><strong>Check-In:</strong> ${b.CheckInDate}</p>
