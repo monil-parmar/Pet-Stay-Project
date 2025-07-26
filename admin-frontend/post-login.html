@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8">
   <title>Redirecting...</title>
   <script src="https://cdn.jsdelivr.net/npm/aws-amplify@latest/dist/aws-amplify.min.js"></script>
+  <script src="https://sdk.amazonaws.com/js/aws-sdk-2.1471.0.min.js"></script>
   <script src="/assets/js/config.js"></script>
   <style>
     body {
@@ -28,6 +28,7 @@
       return;
     }
 
+    // Configure Amplify
     Amplify.configure({
       Auth: {
         region: window.PETSTAY_CONFIG.AWS_REGION,
@@ -43,9 +44,31 @@
       }
     });
 
+    // Configure AWS SDK
+    AWS.config.region = window.PETSTAY_CONFIG.AWS_REGION;
+
+    // IoT policy attach function
+    async function attachIoTPolicy(identityId) {
+      const iot = new AWS.Iot({ region: window.PETSTAY_CONFIG.AWS_REGION });
+      try {
+        await iot.attachPolicy({
+          policyName: 'PetStayAdminIoTAccessPolicy',
+          target: identityId
+        }).promise();
+        console.log("✅ IoT policy attached to:", identityId);
+      } catch (error) {
+        if (error.code === 'ResourceAlreadyExistsException') {
+          console.log("ℹ️ IoT policy already attached to:", identityId);
+        } else {
+          console.error("❌ Failed to attach IoT policy:", error);
+        }
+      }
+    }
+
     try {
       const user = await Auth.currentAuthenticatedUser({ bypassCache: true });
 
+      // Wait for session to become valid (retry logic)
       let session;
       for (let i = 0; i < 5; i++) {
         try {
@@ -61,9 +84,17 @@
         return;
       }
 
+      // Extract email
       const idToken = session.getIdToken();
       const email = (idToken.payload.email || idToken.payload["cognito:username"] || "unknown").toLowerCase();
 
+      // Attach IoT policy using identityId
+      const credentials = await Auth.currentCredentials();
+      const identityId = credentials.identityId;
+      console.log("Cognito Identity ID:", identityId);
+      await attachIoTPolicy(identityId);
+
+      // Redirection logic
       const urlParams = new URLSearchParams(window.location.search);
       const bookingId = sessionStorage.getItem("bookingId") || urlParams.get("bookingId");
       const fromLogin = sessionStorage.getItem("fromLogin") || urlParams.get("fromLogin");
@@ -79,7 +110,6 @@
         return;
       }
 
-      // Smart redirection logic
       if (fromLogin === "1" && bookingId) {
         sessionStorage.removeItem("fromLogin");
         sessionStorage.removeItem("bookingId");
@@ -98,8 +128,5 @@
     }
   });
 </script>
-
-
 </body>
-
 </html>
