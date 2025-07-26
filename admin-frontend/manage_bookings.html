@@ -204,8 +204,6 @@
               </div>
             </div>
           </div>
-
-
         </div>
 
 
@@ -356,45 +354,60 @@
           case "Cancelled": statusClass = "bg-danger"; break;
           default: statusClass = "bg-secondary";
         }
+
         tbody.innerHTML += `
 <tr>
   <td>${index + 1}</td>
-  <td><strong>${b.PetName}</strong><br><small class="text-muted">${b.PetSpecies || "—"}</small></td>
   <td>${b.OwnerName}</td>
-  <td><small>${b.CheckInDate}</small> → <small>${b.CheckOutDate}</small></td>
-  <td><span class="badge ${statusClass} text-white px-2 py-1">${b.Status}</span></td>
-  <td style="white-space: nowrap;">
-    <button class="btn btn-sm btn-outline-secondary" title="View Details" onclick='viewBooking(${JSON.stringify(b)})'>
-      <i class="material-icons">visibility</i>
-    </button>
-    ${showConfirm ? `
-    <button class="btn btn-sm btn-outline-warning" title="Confirm" onclick="confirmBooking('${b.BookingID}')">
-      <i class="material-icons">check_circle</i>
-    </button>` : ""}
-    ${showCheckIn ? `
-    <button class="btn btn-sm btn-outline-info" title="Check In" onclick="checkinBooking('${b.BookingID}')">
-      <i class="material-icons">login</i>
-    </button>` : ""}
-    ${showCheckout ? `
-    <button class="btn btn-sm btn-outline-success" title="Check Out" onclick="checkoutBooking('${b.BookingID}')">
-      <i class="material-icons">logout</i>
-    </button>` : ""}
-    ${showRestore ? `
-    <button class="btn btn-sm btn-outline-info" title="Restore" onclick="restoreBooking('${b.BookingID}')">
-      <i class="material-icons">restore</i>
-    </button>` : ""}
-    ${!showRestore ? `
-    <button class="btn btn-sm btn-outline-danger" title="Cancel" onclick="cancelBooking('${b.BookingID}')">
-      <i class="material-icons">delete</i>
-    </button>` : ""}
-    ${showQR ? `
-    <button class="btn btn-sm btn-outline-dark" title="QR Code" data-url="${b.QRCodeURL || 'data:image/png;base64,' + b.QRBase64}" onclick="showQRModal(this)">
-      <i class="material-icons">qr_code</i>
-    </button>` : ""}
+  <td>${b.PetName}</td>
+  <td>${b.PetSpecies || "N/A"}</td>
+  <td>
+  ${b.PetPhotoURL ? `
+    <a href="${b.PetPhotoURL}" target="_blank">
+      <img src="${b.PetPhotoURL}" 
+           alt="${b.PetName}" 
+           style="width: 50px; height: 50px; object-fit: cover; border-radius: 6px; border: 1px solid #ccc;" 
+           onerror="this.style.display='none'" />
+    </a>
+  ` : 'N/A'}
+</td>
+  <td>${b.PetBreed || "N/A"}</td>
+  <td>${b.PetAge || "N/A"}</td>
+  <td>${b.CheckInDate}</td>
+  <td>${b.CheckOutDate}</td>
+  <td><span class="status-btn ${statusClass}">${b.Status}</span></td>
+  <td>
+    <div class="action">
+      <button class="text-primary" title="View Details" onclick='viewBooking(${JSON.stringify(b)})'>
+        <span class="material-icons">visibility</span>
+      </button>
+      ${!showRestore ? `
+      <button class="text-danger" title="Cancel Booking" onclick="cancelBooking('${b.BookingID}')">
+        <span class="material-icons">delete</span>
+      </button>` : ""}
+      ${showConfirm ? `
+      <button class="text-warning" title="Confirm Booking" onclick="confirmBooking('${b.BookingID}')">
+        <span class="material-icons">check_circle</span>
+      </button>` : ""}
+      ${showCheckIn ? `
+      <button class="text-info" title="Check In" onclick="checkinBooking('${b.BookingID}')">
+        <span class="material-icons">login</span>
+      </button>` : ""}
+      ${showCheckout ? `
+      <button class="text-success" title="Check Out" onclick="checkoutBooking('${b.BookingID}')">
+        <span class="material-icons">logout</span>
+      </button>` : ""}
+      ${showRestore ? `
+      <button class="text-info" title="Restore Booking" onclick="restoreBooking('${b.BookingID}')">
+        <span class="material-icons">restore</span>
+      </button>` : ""}
+      ${showQR ? `
+      <button class="text-secondary" title="View QR Code" data-url="${b.QRCodeURL || 'data:image/png;base64,' + b.QRBase64}" onclick="showQRModal(this)">
+        <span class="material-icons">qr_code</span>
+      </button>` : ""}
+    </div>
   </td>
 </tr>`;
-
-
       });
     }
 
@@ -454,44 +467,26 @@
     // === MODALS AND TOAST ===
     function viewBooking(b) {
       const html = `
-  <ul class="nav nav-tabs mb-3" id="bookingTabs" role="tablist">
-    <li class="nav-item" role="presentation">
-      <button class="nav-link active" id="owner-tab" data-bs-toggle="tab" data-bs-target="#owner" type="button" role="tab">Owner</button>
-    </li>
-    <li class="nav-item" role="presentation">
-      <button class="nav-link" id="pet-tab" data-bs-toggle="tab" data-bs-target="#pet" type="button" role="tab">Pet</button>
-    </li>
-    <li class="nav-item" role="presentation">
-      <button class="nav-link" id="booking-tab" data-bs-toggle="tab" data-bs-target="#booking" type="button" role="tab">Booking</button>
-    </li>
-  </ul>
-
-  <div class="tab-content">
-    <div class="tab-pane fade show active" id="owner" role="tabpanel">
-      <p><strong>Name:</strong> ${b.OwnerName}</p>
-      <p><strong>Email:</strong> ${b.Email}</p>
-      <p><strong>Phone:</strong> ${b.PhoneNumber}</p>
-    </div>
-    <div class="tab-pane fade" id="pet" role="tabpanel">
-      <div class="text-center mb-2">
-        ${b.PetPhotoURL ? `<img src="${b.PetPhotoURL}" alt="${b.PetName}" class="img-fluid rounded border" style="max-width: 100px;" />` : '<p class="text-muted">No photo</p>'}
-      </div>
-      <p><strong>Name:</strong> ${b.PetName}</p>
-      <p><strong>Species:</strong> ${b.PetSpecies}</p>
-      <p><strong>Breed:</strong> ${b.PetBreed || "N/A"}</p>
-      <p><strong>Age:</strong> ${b.PetAge || "N/A"}</p>
-    </div>
-    <div class="tab-pane fade" id="booking" role="tabpanel">
-      <p><strong>Check-In:</strong> ${b.CheckInDate}</p>
-      <p><strong>Check-Out:</strong> ${b.CheckOutDate}</p>
-      <p><strong>Status:</strong> ${b.Status}</p>
-      <p><strong>Room:</strong> ${b.RoomNumber || "N/A"}</p>
-      ${b.QRCodeURL || b.QRBase64 ? `<div class="mt-2 text-center">
-        <img src="${b.QRCodeURL || 'data:image/png;base64,' + b.QRBase64}" alt="QR Code" class="img-fluid" style="max-width: 100px;">
-      </div>` : ""}
-    </div>
-  </div>
-`;
+    <p><strong>Owner:</strong> ${b.OwnerName}</p>
+    <p><strong>Email:</strong> ${b.Email}</p>
+    <p><strong>Phone:</strong> ${b.PhoneNumber}</p>
+    <hr>
+    <p><strong>Pet:</strong> ${b.PetName} (${b.PetSpecies}, ${b.PetBreed || "N/A"})</p>
+    <p><strong>Pet Age:</strong> ${b.PetAge}</p>
+    <p><strong>Pet Photo:</strong><br>
+  ${b.PetPhotoURL ? `
+    <img src="${b.PetPhotoURL}" 
+         alt="Pet Photo" 
+         style="width: 100%; max-width: 200px; border-radius: 8px; border: 1px solid #ccc;"
+         onerror="this.style.display='none'" />
+  ` : 'No photo available'}
+</p>
+    <hr>
+    <p><strong>Check-In:</strong> ${b.CheckInDate}</p>
+    <p><strong>Check-Out:</strong> ${b.CheckOutDate}</p>
+    <p><strong>Status:</strong> ${b.Status}</p>
+    <p><strong>Room:</strong> ${b.RoomNumber || "N/A"}</p>
+  `;
 
       document.getElementById("modalDetails").innerHTML = html;
       new bootstrap.Modal(document.getElementById("bookingModal")).show();
