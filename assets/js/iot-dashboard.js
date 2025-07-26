@@ -115,6 +115,8 @@ function signUrl(endpoint, region, credentials) {
   return `wss://${host}${canonicalUri}?${canonicalQuerystring}&X-Amz-Signature=${signature}`;
 }
 
+let mqttClient = null;
+
 async function connectToIoTDashboard() {
   const {
     AWS_REGION,
@@ -134,37 +136,48 @@ async function connectToIoTDashboard() {
     const creds = AWS.config.credentials;
     const signedUrl = signUrl(IOT_ENDPOINT, AWS_REGION, creds);
 
-    const mqttClient = mqtt.connect(signedUrl, {
+    if (mqttClient) {
+      mqttClient.end(true); // Clean disconnect if reconnecting manually
+    }
+
+    mqttClient = mqtt.connect(signedUrl, {
       clientId: IOT_CLIENT_PREFIX + Math.floor(Math.random() * 100000),
       keepalive: 60,
       clean: true,
-      reconnectPeriod: 0, // Disable automatic reconnect
+      reconnectPeriod: 0 // We will manually handle it
     });
 
     mqttClient.on('connect', () => {
-      console.log('Connected to AWS IoT Core');
+      console.log('✅ Connected to AWS IoT Core');
       mqttClient.subscribe(IOT_TOPIC_DASHBOARD);
-      console.log(`Subscribed to topic: ${IOT_TOPIC_DASHBOARD}`);
+      console.log(`📡 Subscribed to topic: ${IOT_TOPIC_DASHBOARD}`);
     });
 
     mqttClient.on('message', (topic, payload) => {
       try {
         const data = JSON.parse(payload.toString());
-        console.log('IoT message received:', data);
+        console.log('📨 IoT message received:', data);
         updateDashboardStats(data);
       } catch (err) {
-        console.error('Failed to parse incoming message:', err);
+        console.error('❌ Failed to parse incoming message:', err);
       }
     });
 
+    mqttClient.on('close', () => {
+      console.warn('🔌 Connection closed. Reconnecting in 10s...');
+      setTimeout(connectToIoTDashboard, 10000);
+    });
+
     mqttClient.on('error', err => {
-      console.error('MQTT error:', err.message || err);
+      console.error('❌ MQTT error:', err.message || err);
     });
 
   } catch (err) {
-    console.error("Failed to get AWS credentials:", err);
+    console.error("❌ Failed to get AWS credentials:", err);
+    setTimeout(connectToIoTDashboard, 10000); // Retry in 10s on failure
   }
 }
+
 
 function updateDashboardStats(data) {
   const now = new Date().toLocaleTimeString();
