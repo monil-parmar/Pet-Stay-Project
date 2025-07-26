@@ -138,7 +138,7 @@ async function connectToIoTDashboard() {
       clientId: IOT_CLIENT_PREFIX + Math.floor(Math.random() * 100000),
       keepalive: 60,
       clean: true,
-      reconnectPeriod: 4000
+      reconnectPeriod: 0, // Disable automatic reconnect
     });
 
     mqttClient.on('connect', () => {
