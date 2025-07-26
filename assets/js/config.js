@@ -20,7 +20,12 @@ window.PETSTAY_CONFIG = {
   CHECKOUT_BOOKING_URL: 'https://24q261zi50.execute-api.us-east-1.amazonaws.com/checkout',
   RESTORE_BOOKING_URL: 'https://24q261zi50.execute-api.us-east-1.amazonaws.com/restore',
   PET_PHOTO_UPLOAD_URL: 'https://24q261zi50.execute-api.us-east-1.amazonaws.com/upload-url',
-  PET_PHOTO_PUBLIC_URL_BASE: 'https://petstay-pet-photos-101486688.s3.amazonaws.com'
+  PET_PHOTO_PUBLIC_URL_BASE: 'https://petstay-pet-photos-101486688.s3.amazonaws.com',
+
+  IOT_ENDPOINT: 'a14wno4fkns9pt-ats.iot.us-east-1.amazonaws.com',  // Your IoT endpoint
+  IOT_TOPIC_DASHBOARD: '/petstay/dashboard',                      // Your MQTT topic
+  IOT_CLIENT_PREFIX: 'admin-dashboard-'                           // Optional client ID prefix
+
 };
 
 for (const key in window.PETSTAY_CONFIG) {
