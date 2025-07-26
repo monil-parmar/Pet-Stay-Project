@@ -96,8 +96,7 @@ async function connectToIoTDashboard() {
     console.error("Failed to get AWS credentials:", err);
     return;
   }
-
-  const mqttClient = AWS.IotData.device({
+  const mqttClient = awsIot.device({
     region: AWS_REGION,
     host: IOT_ENDPOINT,
     protocol: 'wss',
@@ -107,24 +106,25 @@ async function connectToIoTDashboard() {
     sessionToken: AWS.config.credentials.sessionToken
   });
 
+
   mqttClient.on('connect', () => {
-    console.log('✅ Connected to AWS IoT Core');
+    console.log('Connected to AWS IoT Core');
     mqttClient.subscribe(IOT_TOPIC_DASHBOARD);
-    console.log(`📡 Subscribed to topic: ${IOT_TOPIC_DASHBOARD}`);
+    console.log(`Subscribed to topic: ${IOT_TOPIC_DASHBOARD}`);
   });
 
   mqttClient.on('message', (topic, payload) => {
     try {
       const data = JSON.parse(payload.toString());
-      console.log('📨 IoT message received:', data);
+      console.log('IoT message received:', data);
       updateDashboardStats(data);
     } catch (err) {
-      console.error("❌ Failed to parse incoming message:", err);
+      console.error(" Failed to parse incoming message:", err);
     }
   });
 
   mqttClient.on('error', err => {
-    console.error('❌ MQTT error:', err.message || err);
+    console.error('MQTT error:', err.message || err);
   });
 }
 
