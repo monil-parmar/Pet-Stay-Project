@@ -201,16 +201,22 @@
 
         </div>
 
-        
-<div class="offcanvas offcanvas-end" tabindex="-1" id="bookingDrawer" aria-labelledby="bookingDrawerLabel">
-  <div class="offcanvas-header">
-    <h5 id="bookingDrawerLabel">Booking Details</h5>
-    <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-  </div>
-  <div class="offcanvas-body" id="drawerContent">
-    <!-- Dynamic content injected by JS -->
-  </div>
-</div>
+        <!-- Booking Details Modal -->
+        <div class="modal fade" id="bookingDetailsModal" tabindex="-1" aria-labelledby="bookingDetailsModalLabel"
+          aria-hidden="true">
+          <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="bookingDetailsModalLabel">Booking Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body" id="modalContent">
+                <!-- Injected dynamically -->
+              </div>
+            </div>
+          </div>
+        </div>
+
 
         <!-- Toast Container -->
         <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
@@ -350,7 +356,7 @@
   <td><span class="badge ${statusBadge} text-white">${b.Status}</span></td>
   <td>
     <div class="action">
-      <button class="text-primary" title="View Details" data-booking='${encodeURIComponent(JSON.stringify(b))}' onclick="handleDrawerOpen(this)">
+      <button class="text-primary" title="View Details" data-booking='${encodeURIComponent(JSON.stringify(b))}' onclick="openBookingModal(this)">
         <span class="material-icons">visibility</span>
       </button>
       ${showConfirm ? `
@@ -439,29 +445,25 @@
       await performBookingAction(id, "restore", "Restore this booking?", "Restored", "Error restoring booking");
     }
 
+    function openBookingModal(button) {
+      const bookingData = button.dataset.booking;
+      if (!bookingData) return;
+      const decoded = decodeURIComponent(bookingData);
+      const b = JSON.parse(decoded);
 
-    // === MODALS AND TOAST ===
-    function viewBooking(b) {
-      const drawer = new bootstrap.Offcanvas(document.getElementById('bookingDrawer'));
-
-      const statusColors = {
+      const statusClass = {
         "Pending": "warning",
         "Confirmed": "primary",
         "Checked-In": "info",
         "Checked-Out": "success",
         "Cancelled": "danger"
-      };
-      const statusClass = statusColors[b.Status] || "secondary";
+      }[b.Status] || "secondary";
 
       const html = `
     <h5 class="fw-bold mb-3">${b.PetName} <small class="text-muted">(${b.PetSpecies || "N/A"})</small></h5>
 
     ${b.PetPhotoURL ? `
-      <img src="${b.PetPhotoURL}" 
-           alt="Pet Photo" 
-           class="img-fluid rounded border mb-3"
-           style="max-width: 220px;" 
-           onerror="this.style.display='none'" />
+      <img src="${b.PetPhotoURL}" alt="Pet Photo" class="img-fluid rounded border mb-3" style="max-width: 220px;" onerror="this.style.display='none'" />
     ` : '<p class="text-muted">No photo available</p>'}
 
     <hr class="my-3">
@@ -477,9 +479,8 @@
     <p><strong>Breed:</strong> ${b.PetBreed || "N/A"}</p>
     <p><strong>Age:</strong> ${b.PetAge || "N/A"}</p>
     <p><strong>Species:</strong> ${b.PetSpecies || "N/A"}</p>
+
     <hr class="my-3">
-
-
     <h6 class="fw-bold">Booking Info</h6>
     <p><strong>Check-In:</strong> ${b.CheckInDate}</p>
     <p><strong>Check-Out:</strong> ${b.CheckOutDate}</p>
@@ -488,10 +489,9 @@
     ${b.BookingID ? `<p class="text-muted"><small>Booking ID: ${b.BookingID}</small></p>` : ""}
   `;
 
-      document.getElementById("drawerContent").innerHTML = html;
-      drawer.show();
+      document.getElementById("modalContent").innerHTML = html;
+      new bootstrap.Modal(document.getElementById("bookingDetailsModal")).show();
     }
-
 
     function showToast(msg, isError = false) {
       const toastEl = document.getElementById("toast");
@@ -513,13 +513,8 @@
       new bootstrap.Modal(document.getElementById("qrModal")).show();
     }
 
-    function handleDrawerOpen(button) {
-      const bookingData = button.dataset.booking;
-      if (!bookingData) return;
-      const decoded = decodeURIComponent(bookingData);
-      const parsed = JSON.parse(decoded);
-      viewBooking(parsed);
-    }
+
+
 
   </script>
 
