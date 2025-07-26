@@ -70,22 +70,30 @@ function initSpeciesPieChart() {
     }
   });
 }
+// Utility functions for signing AWS IoT requests
+function sha256(message) {
+  return CryptoJS.SHA256(message).toString(CryptoJS.enc.Hex);
+}
 
-// 🔐 SIGNED URL GENERATOR
+function hmac(key, msg) {
+  return CryptoJS.HmacSHA256(msg, key);
+}
+
 function signUrl(endpoint, region, credentials) {
-  const AWSDate = new Date().toISOString().replace(/[:-]|\.\d{3}/g, '');
-  const dateStamp = AWSDate.slice(0, 8);
+  const now = new Date();
+  const amzdate = now.toISOString().replace(/[:-]|\.\d{3}/g, '');
+  const datestamp = amzdate.slice(0, 8);
   const service = 'iotdevicegateway';
   const algorithm = 'AWS4-HMAC-SHA256';
   const method = 'GET';
   const canonicalUri = '/mqtt';
   const host = endpoint;
-  const credentialScope = `${dateStamp}/${region}/${service}/aws4_request`;
+  const credentialScope = `${datestamp}/${region}/${service}/aws4_request`;
 
   const query = [
     `X-Amz-Algorithm=${algorithm}`,
     `X-Amz-Credential=${encodeURIComponent(credentials.accessKeyId + '/' + credentialScope)}`,
-    `X-Amz-Date=${AWSDate}`,
+    `X-Amz-Date=${amzdate}`,
     `X-Amz-SignedHeaders=host`,
     `X-Amz-Security-Token=${encodeURIComponent(credentials.sessionToken)}`
   ];
@@ -93,14 +101,16 @@ function signUrl(endpoint, region, credentials) {
   const canonicalQuerystring = query.join('&');
   const canonicalHeaders = `host:${host}\n`;
   const signedHeaders = 'host';
-  const payloadHash = AWS.util.crypto.sha256('', 'hex');
+  const payloadHash = sha256('');
+
   const canonicalRequest = `${method}\n${canonicalUri}\n${canonicalQuerystring}\n${canonicalHeaders}\n${signedHeaders}\n${payloadHash}`;
-  const stringToSign = `${algorithm}\n${AWSDate}\n${credentialScope}\n${AWS.util.crypto.sha256(canonicalRequest, 'hex')}`;
-  const kDate = AWS.util.crypto.hmac('AWS4' + credentials.secretAccessKey, dateStamp, 'buffer');
-  const kRegion = AWS.util.crypto.hmac(kDate, region, 'buffer');
-  const kService = AWS.util.crypto.hmac(kRegion, service, 'buffer');
-  const kSigning = AWS.util.crypto.hmac(kService, 'aws4_request', 'buffer');
-  const signature = AWS.util.crypto.hmac(kSigning, stringToSign, 'hex');
+  const stringToSign = `${algorithm}\n${amzdate}\n${credentialScope}\n${sha256(canonicalRequest)}`;
+
+  const kDate = hmac(`AWS4${credentials.secretAccessKey}`, datestamp);
+  const kRegion = hmac(kDate, region);
+  const kService = hmac(kRegion, service);
+  const kSigning = hmac(kService, 'aws4_request');
+  const signature = CryptoJS.HmacSHA256(stringToSign, kSigning).toString(CryptoJS.enc.Hex);
 
   return `wss://${host}${canonicalUri}?${canonicalQuerystring}&X-Amz-Signature=${signature}`;
 }

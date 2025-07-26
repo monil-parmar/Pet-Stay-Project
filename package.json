@@ -27,6 +27,8 @@
     "sass": "^1.63.6"
   },
   "dependencies": {
-    "aws-iot-device-sdk-v2": "^1.22.0"
+    "aws-amplify": "^6.15.4",
+    "aws-iot-device-sdk-v2": "^1.22.0",
+    "mqtt": "^5.13.3"
   }
 }
