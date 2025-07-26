@@ -184,7 +184,6 @@
                   <th>Pet</th>
                   <th>Owner</th>
                   <th>Status</th>
-                  <th>Check-In → Out</th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -193,6 +192,7 @@
               </tbody>
             </table>
           </div>
+
         </div>
 
 
@@ -327,15 +327,13 @@
 
       tbody.innerHTML = "";
       filtered.forEach((b, index) => {
-        let statusClass = "";
-        switch (b.Status) {
-          case "Pending": statusClass = "bg-warning"; break;
-          case "Confirmed": statusClass = "bg-primary"; break;
-          case "Checked-In": statusClass = "bg-info"; break;
-          case "Checked-Out": statusClass = "bg-success"; break;
-          case "Cancelled": statusClass = "bg-danger"; break;
-          default: statusClass = "bg-secondary";
-        }
+        const statusBadge = {
+          "Pending": "bg-warning",
+          "Confirmed": "bg-primary",
+          "Checked-In": "bg-info",
+          "Checked-Out": "bg-success",
+          "Cancelled": "bg-danger"
+        }[b.Status] || "bg-secondary";
 
         const showConfirm = b.Status === "Pending";
         const showCheckIn = b.Status === "Confirmed";
@@ -345,45 +343,47 @@
 
         const row = document.createElement("tr");
         row.innerHTML = `
-      <td>${index + 1}</td>
-      <td><strong>${b.PetName}</strong><br><small class="text-muted">${b.OwnerName}</small></td>
-      <td><small>${b.CheckInDate}</small> → <small>${b.CheckOutDate}</small></td>
-      <td><span class="badge ${statusClass} text-white">${b.Status}</span></td>
-      <td>
-        <div class="action">
-          <button class="text-primary" title="View Details" data-booking='${encodeURIComponent(JSON.stringify(b))}' onclick="handleDrawerOpen(this)">
-            <span class="material-icons">visibility</span>
-          </button>
-          ${!showRestore ? `
-          <button class="text-danger" title="Cancel" onclick="cancelBooking('${b.BookingID}')">
-            <span class="material-icons">delete</span>
-          </button>` : ""}
-          ${showConfirm ? `
-          <button class="text-warning" title="Confirm" onclick="confirmBooking('${b.BookingID}')">
-            <span class="material-icons">check_circle</span>
-          </button>` : ""}
-          ${showCheckIn ? `
-          <button class="text-info" title="Check In" onclick="checkinBooking('${b.BookingID}')">
-            <span class="material-icons">login</span>
-          </button>` : ""}
-          ${showCheckout ? `
-          <button class="text-success" title="Check Out" onclick="checkoutBooking('${b.BookingID}')">
-            <span class="material-icons">logout</span>
-          </button>` : ""}
-          ${showRestore ? `
-          <button class="text-info" title="Restore" onclick="restoreBooking('${b.BookingID}')">
-            <span class="material-icons">restore</span>
-          </button>` : ""}
-          ${showQR ? `
-          <button class="text-secondary" title="QR Code" data-url="${b.QRCodeURL || 'data:image/png;base64,' + b.QRBase64}" onclick="showQRModal(this)">
-            <span class="material-icons">qr_code</span>
-          </button>` : ""}
-        </div>
-      </td>
-    `;
+  <td>${index + 1}</td>
+  <td><strong>${b.PetName}</strong></td>
+  <td>${b.OwnerName}</td>
+  <td><span class="badge ${statusBadge} text-white">${b.Status}</span></td>
+  <td>
+    <div class="action">
+      <button class="text-primary" title="View Details" data-booking='${encodeURIComponent(JSON.stringify(b))}' onclick="handleDrawerOpen(this)">
+        <span class="material-icons">visibility</span>
+      </button>
+      ${showConfirm ? `
+        <button class="text-warning" title="Confirm" onclick="confirmBooking('${b.BookingID}')">
+          <span class="material-icons">check_circle</span>
+        </button>` : ""}
+      ${showCheckIn ? `
+        <button class="text-info" title="Check In" onclick="checkinBooking('${b.BookingID}')">
+          <span class="material-icons">login</span>
+        </button>` : ""}
+      ${showCheckout ? `
+        <button class="text-success" title="Check Out" onclick="checkoutBooking('${b.BookingID}')">
+          <span class="material-icons">logout</span>
+        </button>` : ""}
+      ${!showRestore ? `
+        <button class="text-danger" title="Cancel" onclick="cancelBooking('${b.BookingID}')">
+          <span class="material-icons">delete</span>
+        </button>` : ""}
+      ${showRestore ? `
+        <button class="text-info" title="Restore" onclick="restoreBooking('${b.BookingID}')">
+          <span class="material-icons">restore</span>
+        </button>` : ""}
+      ${showQR ? `
+        <button class="text-secondary" title="QR Code" data-url="${b.QRCodeURL || 'data:image/png;base64,' + b.QRBase64}" onclick="showQRModal(this)">
+          <span class="material-icons">qr_code</span>
+        </button>` : ""}
+    </div>
+  </td>
+`;
+
         tbody.appendChild(row);
       });
     }
+
 
 
     async function performBookingAction(id, action, confirmMessage, successMessage, errorMessage) {
@@ -443,7 +443,6 @@
     function viewBooking(b) {
       const drawer = new bootstrap.Offcanvas(document.getElementById('bookingDrawer'));
 
-      // Optional: status badge class
       const statusColors = {
         "Pending": "warning",
         "Confirmed": "primary",
@@ -459,30 +458,33 @@
     ${b.PetPhotoURL ? `
       <img src="${b.PetPhotoURL}" 
            alt="Pet Photo" 
-           class="img-fluid rounded border mb-3" 
-           style="max-width: 220px;"
+           class="img-fluid rounded border mb-3"
+           style="max-width: 220px;" 
            onerror="this.style.display='none'" />
     ` : '<p class="text-muted">No photo available</p>'}
 
-    <div class="mb-3">
-      <p><strong>Owner:</strong> ${b.OwnerName}</p>
-      <p><strong>Email:</strong> ${b.Email || "N/A"}</p>
-      <p><strong>Phone:</strong> ${b.PhoneNumber || "N/A"}</p>
-    </div>
+    <hr class="my-3">
 
-    <hr>
+    <h6 class="fw-bold">Owner Info</h6>
+    <p><strong>Name:</strong> ${b.OwnerName}</p>
+    <p><strong>Email:</strong> ${b.Email || "N/A"}</p>
+    <p><strong>Phone:</strong> ${b.PhoneNumber || "N/A"}</p>
 
-    <div class="mb-3">
-      <p><strong>Breed:</strong> ${b.PetBreed || "N/A"}</p>
-      <p><strong>Age:</strong> ${b.PetAge || "N/A"}</p>
-    </div>
+    <hr class="my-3">
 
-    <div class="mb-3">
-      <p><strong>Check-In:</strong> ${b.CheckInDate}</p>
-      <p><strong>Check-Out:</strong> ${b.CheckOutDate}</p>
-      <p><strong>Status:</strong> <span class="badge bg-${statusClass}">${b.Status}</span></p>
-      ${b.RoomNumber ? `<p><strong>Room:</strong> ${b.RoomNumber}</p>` : ""}
-    </div>
+    <h6 class="fw-bold">Pet Details</h6>
+    <p><strong>Breed:</strong> ${b.PetBreed || "N/A"}</p>
+    <p><strong>Age:</strong> ${b.PetAge || "N/A"}</p>
+    <p><strong>Species:</strong> ${b.PetSpecies || "N/A"}</p>
+    <hr class="my-3">
+    
+
+    <h6 class="fw-bold">Booking Info</h6>
+    <p><strong>Check-In:</strong> ${b.CheckInDate}</p>
+    <p><strong>Check-Out:</strong> ${b.CheckOutDate}</p>
+    <p><strong>Status:</strong> <span class="badge bg-${statusClass}">${b.Status}</span></p>
+    ${b.RoomNumber ? `<p><strong>Room:</strong> ${b.RoomNumber}</p>` : ""}
+    ${b.BookingID ? `<p class="text-muted"><small>Booking ID: ${b.BookingID}</small></p>` : ""}
   `;
 
       document.getElementById("drawerContent").innerHTML = html;
@@ -509,6 +511,15 @@
       img.src = qrUrl;
       new bootstrap.Modal(document.getElementById("qrModal")).show();
     }
+
+    function handleDrawerOpen(button) {
+      const bookingData = button.dataset.booking;
+      if (!bookingData) return;
+      const decoded = decodeURIComponent(bookingData);
+      const parsed = JSON.parse(decoded);
+      viewBooking(parsed);
+    }
+
   </script>
 
 </body>
