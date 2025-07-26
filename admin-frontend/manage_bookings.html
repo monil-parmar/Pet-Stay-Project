@@ -422,7 +422,7 @@
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json"
           },
-          body: JSON.stringify({ bookingId: id })
+      body: JSON.stringify({ BookingID: id })  
         });
 
         const data = await res.json();
