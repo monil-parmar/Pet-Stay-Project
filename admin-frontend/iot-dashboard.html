@@ -73,24 +73,30 @@
               <div class="profile-box ms-3 position-relative">
                 <button class="dropdown-toggle bg-transparent border-0 d-flex align-items-center gap-2" type="button"
                   id="profile" data-bs-toggle="dropdown">
-                  <img src="/assets/images/profile/profile-image.png" alt="Profile" class="rounded-circle" width="40" height="40" />
+                  <img src="/assets/images/profile/profile-image.png" alt="Profile" class="rounded-circle" width="40"
+                    height="40" />
                   <div class="d-none d-md-block text-start">
-                    <h6 class="fw-semibold mb-0 text-sm" id="adminEmail"><span class="spinner-border spinner-border-sm"></span> Loading...</h6>
+                    <h6 class="fw-semibold mb-0 text-sm" id="adminEmail"><span
+                        class="spinner-border spinner-border-sm"></span> Loading...</h6>
                     <p class="mb-0 text-xs text-muted">Admin</p>
                   </div>
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end shadow-lg p-2">
                   <li>
                     <div class="d-flex align-items-center px-3 py-2">
-                      <img src="/assets/images/profile/profile-image.png" alt="Profile" class="rounded-circle" width="40" height="40" />
+                      <img src="/assets/images/profile/profile-image.png" alt="Profile" class="rounded-circle"
+                        width="40" height="40" />
                       <div class="ms-3">
                         <h6 class="mb-0 text-sm fw-semibold">Admin</h6>
                         <a id="adminEmailDropdown" href="#" class="text-xs text-muted">Loading...</a>
                       </div>
                     </div>
                   </li>
-                  <li><hr class="dropdown-divider" /></li>
-                  <li><a href="javascript:void(0);" id="signOutBtn" class="dropdown-item text-danger"><i class="lni lni-exit me-2"></i> Sign Out</a></li>
+                  <li>
+                    <hr class="dropdown-divider" />
+                  </li>
+                  <li><a href="javascript:void(0);" id="signOutBtn" class="dropdown-item text-danger"><i
+                        class="lni lni-exit me-2"></i> Sign Out</a></li>
                 </ul>
               </div>
             </div>
@@ -160,6 +166,23 @@
             </div>
           </div>
         </div>
+
+        <div class="row mt-4">
+          <div class="col-lg-6">
+            <div class="card-style mb-30">
+              <div class="title">
+                <h6 class="text-medium">Species Distribution</h6>
+              </div>
+              <div class="chart">
+                <canvas id="SpeciesPieChart" style="width: 100%; height: 300px;"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+
+
+
+
       </div>
     </section>
 
@@ -180,4 +203,5 @@
   <script src="/assets/js/bootstrap.bundle.min.js"></script>
   <script src="/assets/js/iot-connect.js"></script>
 </body>
+
 </html>

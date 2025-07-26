@@ -23,9 +23,9 @@ window.PETSTAY_CONFIG = {
   PET_PHOTO_PUBLIC_URL_BASE: 'https://petstay-pet-photos-101486688.s3.amazonaws.com',
 
   IOT_ENDPOINT: 'a14wno4fkns9pt-ats.iot.us-east-1.amazonaws.com',  // Your IoT endpoint
-  IOT_TOPIC_DASHBOARD: '/petstay/dashboard',                      // Your MQTT topic
-  IOT_CLIENT_PREFIX: 'admin-dashboard-'                           // Optional client ID prefix
-
+  IOT_TOPIC_DASHBOARD: 'petstay/admin/stats',  // Your MQTT topic
+  IOT_CLIENT_PREFIX: 'admin-dashboard-',                       // Optional client ID prefix
+  IDENTITY_POOL_ID: 'us-east-1:25fbdcc1-9e3d-4655-adbf-679d2f895c0c',
 };
 
 for (const key in window.PETSTAY_CONFIG) {
