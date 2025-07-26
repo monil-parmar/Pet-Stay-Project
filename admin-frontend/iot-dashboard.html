@@ -8,24 +8,23 @@
   <link rel="shortcut icon" href="/assets/images/favicon.svg" type="image/x-icon" />
   <title>IoT Live Stats</title>
 
-  <!-- All CSS -->
+  <!-- CSS Dependencies -->
   <link rel="stylesheet" href="/assets/css/bootstrap.min.css" />
   <link rel="stylesheet" href="/assets/css/lineicons.css" />
   <link rel="stylesheet" href="/assets/css/materialdesignicons.min.css" />
   <link rel="stylesheet" href="/assets/css/main.css" />
-  <script src="/assets/js/Chart.min.js"></script>
+
+  <!-- JS Dependencies -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.4/dist/Chart.min.js"></script>
   <script src="https://sdk.amazonaws.com/js/aws-sdk-2.1471.0.min.js"></script>
-  <script src="https://unpkg.com/aws-iot-device-sdk/browser/aws-iot-sdk-browser-bundle.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/aws-amplify@latest/dist/aws-amplify.min.js"></script>
   <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
-  <script src="https://unpkg.com/amazon-cognito-identity-js/dist/amazon-cognito-identity.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/crypto-js@4.1.1/crypto-js.min.js"></script>
 
-
-
+  <!-- Config / Custom Logic -->
   <script src="/assets/js/config.js"></script>
   <script src="/assets/js/auth-check.js"></script>
 </head>
+
 
 <body>
   <!-- Sidebar -->

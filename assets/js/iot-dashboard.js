@@ -79,18 +79,28 @@ function hmac(key, msg) {
   return CryptoJS.HmacSHA256(msg, key);
 }
 
+function sha256(message) {
+  return CryptoJS.SHA256(message).toString(CryptoJS.enc.Hex);
+}
+
+function hmac(key, msg) {
+  return CryptoJS.HmacSHA256(CryptoJS.enc.Utf8.parse(msg), key);
+}
+
 function signUrl(endpoint, region, credentials) {
   const now = new Date();
   const amzdate = now.toISOString().replace(/[:-]|\.\d{3}/g, '');
   const datestamp = amzdate.slice(0, 8);
+
   const service = 'iotdevicegateway';
   const algorithm = 'AWS4-HMAC-SHA256';
   const method = 'GET';
   const canonicalUri = '/mqtt';
-  const host = endpoint;
+  const host = endpoint.replace(/^wss?:\/\//, '');
+
   const credentialScope = `${datestamp}/${region}/${service}/aws4_request`;
 
-  const query = [
+  const queryParams = [
     `X-Amz-Algorithm=${algorithm}`,
     `X-Amz-Credential=${encodeURIComponent(credentials.accessKeyId + '/' + credentialScope)}`,
     `X-Amz-Date=${amzdate}`,
@@ -98,22 +108,45 @@ function signUrl(endpoint, region, credentials) {
     `X-Amz-Security-Token=${encodeURIComponent(credentials.sessionToken)}`
   ];
 
-  const canonicalQuerystring = query.join('&');
+  const canonicalQuerystring = queryParams.join('&');
   const canonicalHeaders = `host:${host}\n`;
   const signedHeaders = 'host';
   const payloadHash = sha256('');
 
-  const canonicalRequest = `${method}\n${canonicalUri}\n${canonicalQuerystring}\n${canonicalHeaders}\n${signedHeaders}\n${payloadHash}`;
-  const stringToSign = `${algorithm}\n${amzdate}\n${credentialScope}\n${sha256(canonicalRequest)}`;
+  const canonicalRequest = [
+    method,
+    canonicalUri,
+    canonicalQuerystring,
+    canonicalHeaders,
+    signedHeaders,
+    payloadHash
+  ].join('\n');
 
-  const kDate = hmac(`AWS4${credentials.secretAccessKey}`, datestamp);
+  const stringToSign = [
+    algorithm,
+    amzdate,
+    credentialScope,
+    sha256(canonicalRequest)
+  ].join('\n');
+
+  // Key derivation
+  const kDate = hmac(CryptoJS.enc.Utf8.parse(`AWS4${credentials.secretAccessKey}`), datestamp);
   const kRegion = hmac(kDate, region);
   const kService = hmac(kRegion, service);
   const kSigning = hmac(kService, 'aws4_request');
+
   const signature = CryptoJS.HmacSHA256(stringToSign, kSigning).toString(CryptoJS.enc.Hex);
 
-  return `wss://${host}${canonicalUri}?${canonicalQuerystring}&X-Amz-Signature=${signature}`;
+  const signedUrl = `wss://${host}${canonicalUri}?${canonicalQuerystring}&X-Amz-Signature=${signature}`;
+
+  // Optional debug
+  console.log("CanonicalRequest:\n", canonicalRequest);
+  console.log("StringToSign:\n", stringToSign);
+  console.log("Signed URL:\n", signedUrl);
+
+  return signedUrl;
 }
+
 
 let mqttClient = null;
 
@@ -126,31 +159,46 @@ async function connectToIoTDashboard() {
     IDENTITY_POOL_ID
   } = window.PETSTAY_CONFIG;
 
+  // Configure AWS SDK
   AWS.config.region = AWS_REGION;
   AWS.config.credentials = new AWS.CognitoIdentityCredentials({
     IdentityPoolId: IDENTITY_POOL_ID
   });
 
   try {
+    // Fetch temporary credentials
     await AWS.config.credentials.getPromise();
     const creds = AWS.config.credentials;
-    const signedUrl = signUrl(IOT_ENDPOINT, AWS_REGION, creds);
 
+    // Generate signed WebSocket URL
+    const signedUrl = signUrl(IOT_ENDPOINT, AWS_REGION, {
+      accessKeyId: creds.accessKeyId,
+      secretAccessKey: creds.secretAccessKey,
+      sessionToken: creds.sessionToken
+    });
+
+    // Disconnect existing client if any
     if (mqttClient) {
-      mqttClient.end(true); // Clean disconnect if reconnecting manually
+      mqttClient.end(true);
     }
 
+    // Connect to AWS IoT using MQTT over WebSocket
     mqttClient = mqtt.connect(signedUrl, {
-      clientId: IOT_CLIENT_PREFIX + Math.floor(Math.random() * 100000),
+      clientId: `${IOT_CLIENT_PREFIX}${Math.floor(Math.random() * 100000)}`,
       keepalive: 60,
       clean: true,
-      reconnectPeriod: 0 // We will manually handle it
+      reconnectPeriod: 0 // We handle reconnection manually
     });
 
     mqttClient.on('connect', () => {
       console.log('✅ Connected to AWS IoT Core');
-      mqttClient.subscribe(IOT_TOPIC_DASHBOARD);
-      console.log(`📡 Subscribed to topic: ${IOT_TOPIC_DASHBOARD}`);
+      mqttClient.subscribe(IOT_TOPIC_DASHBOARD, (err) => {
+        if (err) {
+          console.error('❌ Subscription error:', err.message);
+        } else {
+          console.log(`📡 Subscribed to topic: ${IOT_TOPIC_DASHBOARD}`);
+        }
+      });
     });
 
     mqttClient.on('message', (topic, payload) => {
@@ -159,22 +207,22 @@ async function connectToIoTDashboard() {
         console.log('📨 IoT message received:', data);
         updateDashboardStats(data);
       } catch (err) {
-        console.error('❌ Failed to parse incoming message:', err);
+        console.error('❌ Failed to parse IoT message:', err);
       }
     });
 
     mqttClient.on('close', () => {
-      console.warn('🔌 Connection closed. Reconnecting in 10s...');
+      console.warn('🔌 MQTT connection closed. Reconnecting in 10s...');
       setTimeout(connectToIoTDashboard, 10000);
     });
 
-    mqttClient.on('error', err => {
+    mqttClient.on('error', (err) => {
       console.error('❌ MQTT error:', err.message || err);
     });
 
   } catch (err) {
-    console.error("❌ Failed to get AWS credentials:", err);
-    setTimeout(connectToIoTDashboard, 10000); // Retry in 10s on failure
+    console.error('❌ Failed to authenticate or connect:', err);
+    setTimeout(connectToIoTDashboard, 10000);
   }
 }
 
