@@ -14,6 +14,7 @@ const amplifyAuthConfig = {
   region: 'us-east-1',
   userPoolId: 'us-east-1_QIxGKKFzG',
   userPoolWebClientId: '7pk31b8a5ak2b7aj42qimaibhc',
+      identityPoolId: 'us-east-1:25fbdcc1-9e3d-4655-adbf-679d2f895c0c', 
   oauth: {
     domain: 'us-east-1qixgkkfzg.auth.us-east-1.amazoncognito.com',
     scope: ['email', 'openid', 'phone'],
