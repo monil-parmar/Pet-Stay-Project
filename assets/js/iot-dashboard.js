@@ -1,7 +1,3 @@
-// File: assets/js/iot-dashboard.js
-
-// Required: config.js and auth-check.js must be loaded before this file
-
 let bookingTrendChart = null;
 let bookingTrendData = {
   labels: [],
@@ -75,6 +71,40 @@ function initSpeciesPieChart() {
   });
 }
 
+// 🔐 SIGNED URL GENERATOR
+function signUrl(endpoint, region, credentials) {
+  const AWSDate = new Date().toISOString().replace(/[:-]|\.\d{3}/g, '');
+  const dateStamp = AWSDate.slice(0, 8);
+  const service = 'iotdevicegateway';
+  const algorithm = 'AWS4-HMAC-SHA256';
+  const method = 'GET';
+  const canonicalUri = '/mqtt';
+  const host = endpoint;
+  const credentialScope = `${dateStamp}/${region}/${service}/aws4_request`;
+
+  const query = [
+    `X-Amz-Algorithm=${algorithm}`,
+    `X-Amz-Credential=${encodeURIComponent(credentials.accessKeyId + '/' + credentialScope)}`,
+    `X-Amz-Date=${AWSDate}`,
+    `X-Amz-SignedHeaders=host`,
+    `X-Amz-Security-Token=${encodeURIComponent(credentials.sessionToken)}`
+  ];
+
+  const canonicalQuerystring = query.join('&');
+  const canonicalHeaders = `host:${host}\n`;
+  const signedHeaders = 'host';
+  const payloadHash = AWS.util.crypto.sha256('', 'hex');
+  const canonicalRequest = `${method}\n${canonicalUri}\n${canonicalQuerystring}\n${canonicalHeaders}\n${signedHeaders}\n${payloadHash}`;
+  const stringToSign = `${algorithm}\n${AWSDate}\n${credentialScope}\n${AWS.util.crypto.sha256(canonicalRequest, 'hex')}`;
+  const kDate = AWS.util.crypto.hmac('AWS4' + credentials.secretAccessKey, dateStamp, 'buffer');
+  const kRegion = AWS.util.crypto.hmac(kDate, region, 'buffer');
+  const kService = AWS.util.crypto.hmac(kRegion, service, 'buffer');
+  const kSigning = AWS.util.crypto.hmac(kService, 'aws4_request', 'buffer');
+  const signature = AWS.util.crypto.hmac(kSigning, stringToSign, 'hex');
+
+  return `wss://${host}${canonicalUri}?${canonicalQuerystring}&X-Amz-Signature=${signature}`;
+}
+
 async function connectToIoTDashboard() {
   const {
     AWS_REGION,
@@ -85,47 +115,45 @@ async function connectToIoTDashboard() {
   } = window.PETSTAY_CONFIG;
 
   AWS.config.region = AWS_REGION;
-
   AWS.config.credentials = new AWS.CognitoIdentityCredentials({
     IdentityPoolId: IDENTITY_POOL_ID
   });
 
   try {
     await AWS.config.credentials.getPromise();
+    const creds = AWS.config.credentials;
+    const signedUrl = signUrl(IOT_ENDPOINT, AWS_REGION, creds);
+
+    const mqttClient = mqtt.connect(signedUrl, {
+      clientId: IOT_CLIENT_PREFIX + Math.floor(Math.random() * 100000),
+      keepalive: 60,
+      clean: true,
+      reconnectPeriod: 4000
+    });
+
+    mqttClient.on('connect', () => {
+      console.log('✅ Connected to AWS IoT Core');
+      mqttClient.subscribe(IOT_TOPIC_DASHBOARD);
+      console.log(`📡 Subscribed to topic: ${IOT_TOPIC_DASHBOARD}`);
+    });
+
+    mqttClient.on('message', (topic, payload) => {
+      try {
+        const data = JSON.parse(payload.toString());
+        console.log('📨 IoT message received:', data);
+        updateDashboardStats(data);
+      } catch (err) {
+        console.error('❌ Failed to parse incoming message:', err);
+      }
+    });
+
+    mqttClient.on('error', err => {
+      console.error('❌ MQTT error:', err.message || err);
+    });
+
   } catch (err) {
-    console.error("Failed to get AWS credentials:", err);
-    return;
+    console.error("❌ Failed to get AWS credentials:", err);
   }
-  const mqttClient = awsIot.device({
-    region: AWS_REGION,
-    host: IOT_ENDPOINT,
-    protocol: 'wss',
-    clientId: IOT_CLIENT_PREFIX + Math.floor(Math.random() * 100000),
-    accessKeyId: AWS.config.credentials.accessKeyId,
-    secretKey: AWS.config.credentials.secretAccessKey,
-    sessionToken: AWS.config.credentials.sessionToken
-  });
-
-
-  mqttClient.on('connect', () => {
-    console.log('Connected to AWS IoT Core');
-    mqttClient.subscribe(IOT_TOPIC_DASHBOARD);
-    console.log(`Subscribed to topic: ${IOT_TOPIC_DASHBOARD}`);
-  });
-
-  mqttClient.on('message', (topic, payload) => {
-    try {
-      const data = JSON.parse(payload.toString());
-      console.log('IoT message received:', data);
-      updateDashboardStats(data);
-    } catch (err) {
-      console.error(" Failed to parse incoming message:", err);
-    }
-  });
-
-  mqttClient.on('error', err => {
-    console.error('MQTT error:', err.message || err);
-  });
 }
 
 function updateDashboardStats(data) {
@@ -174,7 +202,6 @@ function updateDashboardStats(data) {
           .join(', ');
         document.getElementById("statSpeciesStats").textContent = text;
 
-        // Update the pie chart if available
         if (speciesPieChart) {
           speciesPieChart.data.labels = Object.keys(val.petSpecies);
           speciesPieChart.data.datasets[0].data = Object.values(val.petSpecies);
