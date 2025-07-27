@@ -208,3 +208,25 @@ if (!Amplify || typeof Amplify.configure !== 'function') {
     }, 500);
   });
 }
+// Retry logic if Amplify not ready on first run
+if (!Amplify || !Auth || !Hub) {
+  console.warn("Amplify modules not ready — retrying in 200ms...");
+  let attempts = 0;
+  const maxAttempts = 5;
+  const retryInterval = setInterval(() => {
+    Amplify = window.Amplify;
+    Auth = window.Amplify?.Auth;
+    Hub = window.Amplify?.Hub;
+
+    if (Amplify?.configure && Auth && Hub) {
+      clearInterval(retryInterval);
+      console.log("Amplify modules available after retry");
+      initAuth();
+    } else if (++attempts >= maxAttempts) {
+      clearInterval(retryInterval);
+      console.error("Amplify still not available after retries. Aborting.");
+    }
+  }, 200);
+} else {
+  initAuth(); // Amplify is already ready
+}
