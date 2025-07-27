@@ -10,22 +10,15 @@
 
   <!-- ========== All CSS files linkup ========= -->
   <link rel="stylesheet" href="/assets/css/bootstrap.min.css" />
-  <link rel="stylesheet" href="/assets/css/lineicons.css" />
-  <link href="https://cdn.lineicons.com/2.0/LineIcons.css" rel="stylesheet" />
-  <link rel="stylesheet" href="/assets/css/materialdesignicons.min.css" />
+  <link rel="stylesheet" href="/assets/css/lineicons.css" rel="stylesheet" type="text/css" />
+  <link href="https://cdn.lineicons.com/2.0/LineIcons.css" rel="stylesheet">
+
+  <link rel="stylesheet" href="/assets/css/materialdesignicons.min.css" rel="stylesheet" type="text/css" />
+  <!-- <link rel="stylesheet" href="/assets/css/fullcalendar.css" /> -->
   <link rel="stylesheet" href="/assets/css/main.css" />
-
-  <!-- ========== JS Dependencies ========= -->
   <script src="/assets/js/Chart.min.js"></script>
-
-  <!-- Load AWS Amplify BEFORE config/auth-check -->
-  <script src="https://cdn.jsdelivr.net/npm/aws-amplify@5.0.4/dist/aws-amplify.min.js"></script>
-
-  <!-- Global app config -->
   <script src="/assets/js/config.js"></script>
 
-  <!-- Amplify Auth + Cognito Identity setup -->
-  <script src="/assets/js/auth-check.js"></script>
 </head>
 
 <body>
@@ -54,15 +47,6 @@
               <i class="lni lni-calendar"></i>
             </span>
             <span class="text">Bookings</span>
-          </a>
-        </li>
-
-        <li class="nav-item">
-          <a href="/admin-frontend/iot-dashboard.html">
-            <span class="icon">
-              <i class="lni lni-network"></i>
-            </span>
-            <span class="text">IOT Dashboard</span>
           </a>
         </li>
 
@@ -331,20 +315,20 @@
     </footer>
   </main>
 
-  <!-- QR Modal -->
-  <div class="modal fade" id="qrModal" tabindex="-1" aria-labelledby="qrModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-sm modal-dialog-centered">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="qrModalLabel">QR Code</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body text-center">
-          <img id="qrModalImage" src="" alt="QR Code" class="img-fluid" style="max-width: 100%;" />
-        </div>
+<!-- QR Modal -->
+<div class="modal fade" id="qrModal" tabindex="-1" aria-labelledby="qrModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-sm modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="qrModalLabel">QR Code</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body text-center">
+        <img id="qrModalImage" src="" alt="QR Code" class="img-fluid" style="max-width: 100%;" />
       </div>
     </div>
   </div>
+</div>
 
   <!-- ======== main-wrapper end =========== -->
   <!-- ========= All Javascript files linkup ======== -->
@@ -352,7 +336,7 @@
   <script defer src="/assets/js/moment.min.js"></script>
   <script defer src="/assets/js/jvectormap.min.js"></script>
   <script defer src="/assets/js/main.js"></script>
-
+  <script defer src="https://cdn.jsdelivr.net/npm/aws-amplify@latest/dist/aws-amplify.min.js"></script>
   <script defer src="/assets/js/auth-check.js"></script>
 
   <script>

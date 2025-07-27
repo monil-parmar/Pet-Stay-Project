@@ -47,16 +47,6 @@
             <span class="text">Bookings</span>
           </a>
         </li>
-
-        <li class="nav-item">
-          <a href="/admin-frontend/iot-dashboard.html">
-            <span class="icon">
-              <i class="lni lni-network"></i>
-            </span>
-            <span class="text">IOT Dashboard</span>
-          </a>
-        </li>
-
       </ul>
     </nav>
   </aside>
@@ -292,26 +282,6 @@
   <!-- Your main.js and all other script imports -->
   <script src="/assets/js/main.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/aws-amplify@latest/dist/aws-amplify.min.js"></script>
-
-  <script>
-  // Put this block immediately after loading Amplify
-  const amplifyAuthConfig = {
-    Auth: {
-      region: window.PETSTAY_CONFIG.AWS_REGION,
-      userPoolId: window.PETSTAY_CONFIG.COGNITO_USER_POOL_ID,
-      userPoolWebClientId: window.PETSTAY_CONFIG.COGNITO_USER_POOL_CLIENT_ID,
-      identityPoolId: window.PETSTAY_CONFIG.IDENTITY_POOL_ID,
-      oauth: {
-        domain: window.PETSTAY_CONFIG.COGNITO_DOMAIN,
-        scope: ['email', 'openid'],
-        redirectSignIn: window.PETSTAY_CONFIG.REDIRECT_SIGN_IN_URL,
-        redirectSignOut: window.PETSTAY_CONFIG.REDIRECT_SIGN_OUT_URL,
-        responseType: 'code'
-      }
-    }
-  };
-  window.Amplify.configure(amplifyAuthConfig);
-</script>
   <script src="/assets/js/auth-check.js"></script>
 
   <script>
@@ -442,7 +412,7 @@
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json"
           },
-      body: JSON.stringify({ BookingID: id })  
+          body: JSON.stringify({ bookingId: id })
         });
 
         const data = await res.json();
