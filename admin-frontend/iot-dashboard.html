@@ -14,21 +14,16 @@
   <link rel="stylesheet" href="/assets/css/main.css" />
   <link href="https://cdn.lineicons.com/3.0/lineicons.css" rel="stylesheet" />
 
-  <!-- Load AWS Amplify FIRST (UMD version, ensures window.Amplify exists) -->
-
-<script src="https://cdn.jsdelivr.net/npm/aws-amplify@4.3.39/dist/aws-amplify.umd.min.js"
-        crossorigin="anonymous"
-        onload="console.log(' Amplify UMD loaded')"
-        onerror="console.error('Failed to load Amplify UMD')">
-</script>
-
-
+  <script src="https://unpkg.com/aws-amplify@4.3.39/dist/aws-amplify.umd.js"
+          crossorigin="anonymous"
+          onload="console.log('Amplify UMD loaded')"
+          onerror="console.error('Failed to load Amplify UMD')">
+  </script>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.4/dist/Chart.min.js"></script>
   <script src="https://sdk.amazonaws.com/js/aws-sdk-2.1471.0.min.js"></script>
   <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/crypto-js@4.1.1/crypto-js.min.js"></script>
-
   <script src="/assets/js/config.js"></script>
 
   <script>
@@ -63,6 +58,7 @@
     document.addEventListener("DOMContentLoaded", () => configureAmplify());
   </script>
 </head>
+
 
 <body>
   <aside class="sidebar-nav-wrapper">
