@@ -148,15 +148,20 @@ async function connectToIoTDashboard() {
 function updateDashboardStats(data) {
   const now = new Date().toLocaleTimeString();
 
+  const setText = (id, value) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = value;
+  };
+
   if (data.metric === "currentGuests") {
-    document.getElementById("statCurrentGuests").textContent = data.value;
+    setText("statCurrentGuests", data.value);
   } else if (data.metric === "availableRooms") {
-    document.getElementById("statAvailableRooms").textContent = data.value;
+    setText("statAvailableRooms", data.value);
   } else if (data.metric === "speciesStats") {
-    document.getElementById("statSpeciesStats").textContent = JSON.stringify(data.value);
+    setText("statSpeciesStats", JSON.stringify(data.value));
   } else if (data.metric === "bookingTrends") {
     const latest = data.value[data.value.length - 1];
-    document.getElementById("statBookingTrends").textContent = latest;
+    setText("statBookingTrends", latest);
     if (bookingTrendChart) {
       bookingTrendChart.data.labels.push(now);
       bookingTrendChart.data.datasets[0].data.push(latest);
@@ -168,15 +173,13 @@ function updateDashboardStats(data) {
     }
   } else if (data.metric === "bookingUpdate") {
     const val = data.value;
-    if (val.currentGuests !== undefined)
-      document.getElementById("statCurrentGuests").textContent = val.currentGuests;
-    if (val.availableRooms !== undefined)
-      document.getElementById("statAvailableRooms").textContent = val.availableRooms;
+    if (val.currentGuests !== undefined) setText("statCurrentGuests", val.currentGuests);
+    if (val.availableRooms !== undefined) setText("statAvailableRooms", val.availableRooms);
     if (val.petSpecies !== undefined) {
       const stat = typeof val.petSpecies === 'object'
         ? Object.entries(val.petSpecies).map(([k, v]) => `${k}: ${v}`).join(', ')
         : val.petSpecies;
-      document.getElementById("statSpeciesStats").textContent = stat;
+      setText("statSpeciesStats", stat);
 
       if (speciesPieChart && typeof val.petSpecies === 'object') {
         speciesPieChart.data.labels = Object.keys(val.petSpecies);
@@ -185,7 +188,7 @@ function updateDashboardStats(data) {
       }
     }
     if (val.bookingTrendPoint !== undefined && bookingTrendChart) {
-      document.getElementById("statBookingTrends").textContent = val.bookingTrendPoint;
+      setText("statBookingTrends", val.bookingTrendPoint);
       bookingTrendChart.data.labels.push(now);
       bookingTrendChart.data.datasets[0].data.push(val.bookingTrendPoint);
       if (bookingTrendChart.data.labels.length > 20) {
@@ -202,11 +205,23 @@ document.addEventListener("DOMContentLoaded", () => {
   initBookingTrendChart();
   initSpeciesPieChart();
 
+  let attempts = 0;
+  const maxAttempts = 20;
+
   const waitForAuth = setInterval(() => {
+    attempts++;
     if (window.petstayCurrentEmail && window.Amplify?.Auth) {
       clearInterval(waitForAuth);
       console.log("🔐 User authenticated. Connecting to IoT...");
       connectToIoTDashboard();
+    } else if (attempts >= maxAttempts) {
+      clearInterval(waitForAuth);
+      console.warn("❌ Auth check failed after retries — skipping IoT connection");
+      ["statBookingTrends", "statCurrentGuests", "statAvailableRooms", "statSpeciesStats"]
+        .forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.textContent = "Auth failed";
+        });
     }
   }, 300);
 });

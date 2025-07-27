@@ -12,25 +12,18 @@
   <link rel="stylesheet" href="/assets/css/bootstrap.min.css" />
   <link rel="stylesheet" href="/assets/css/materialdesignicons.min.css" />
   <link rel="stylesheet" href="/assets/css/main.css" />
-  <link href="https://cdn.lineicons.com/3.0/lineicons.css" rel="stylesheet">
+  <link href="https://cdn.lineicons.com/3.0/lineicons.css" rel="stylesheet" />
 
-
-  <!-- JS Dependencies -->
+  <!-- Chart / AWS / MQTT / Crypto -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.4/dist/Chart.min.js"></script>
   <script src="https://sdk.amazonaws.com/js/aws-sdk-2.1471.0.min.js"></script>
   <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/crypto-js@4.1.1/crypto-js.min.js"></script>
 
-  <!-- Config / Custom Logic -->
+  <!-- Config and AWS Amplify -->
   <script src="/assets/js/config.js"></script>
-  <!-- Load AWS Amplify libraries -->
   <script src="https://unpkg.com/aws-amplify@5.0.4/dist/aws-amplify.min.js"></script>
-
-  <!-- THEN load your custom auth-check.js -->
-  <script src="/assets/js/auth-check.js"></script>
-
 </head>
-
 
 <body>
   <!-- Sidebar -->
@@ -90,7 +83,6 @@
                         <img src="/assets/images/profile/profile-image.png" alt="Profile image" />
                       </div>
                       <div>
-                        <!-- Email inserted here by JS -->
                         <h6 class="fw-500 mb-0" id="adminEmail">
                           <span class="spinner-border spinner-border-sm" role="status"></span>
                           Loading...
@@ -100,8 +92,6 @@
                     </div>
                   </div>
                 </button>
-
-                <!-- Dropdown -->
                 <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="profile">
                   <li>
                     <div class="author-info d-flex align-items-center p-2">
@@ -109,8 +99,7 @@
                         <img src="/assets/images/profile/profile-image.png" alt="Dropdown image">
                       </div>
                       <div class="content ms-2">
-                        <h4 class="text-sm mb-1">Admin</h4> <!-- Name dynamically set here -->
-                        <!-- Email dynamically set here -->
+                        <h4 class="text-sm mb-1">Admin</h4>
                         <a id="adminEmailDropdown" class="text-muted text-xs" href="#">Loading...</a>
                       </div>
                     </div>
@@ -125,15 +114,13 @@
                   </li>
                 </ul>
               </div>
-
-
             </div>
           </div>
         </div>
       </div>
     </header>
 
-    <!-- IoT Section -->
+    <!-- IoT Dashboard Section -->
     <section class="section">
       <div class="container-fluid">
         <div class="d-flex justify-content-between align-items-center mt-4 mb-3">
@@ -141,7 +128,6 @@
           <button class="btn btn-outline-primary btn-sm" onclick="connectToIoTDashboard()">Reconnect</button>
         </div>
 
-        <!-- Stats -->
         <div class="row g-4 mt-3">
           <div class="col-md-6 col-xl-3">
             <div class="icon-card h-100">
@@ -181,7 +167,6 @@
           </div>
         </div>
 
-        <!-- Chart Section -->
         <div class="row mt-4">
           <div class="col-lg-12">
             <div class="card-style mb-30">
@@ -207,10 +192,6 @@
             </div>
           </div>
         </div>
-
-
-
-
       </div>
     </section>
 
@@ -230,18 +211,51 @@
   <!-- JS -->
   <script src="/assets/js/bootstrap.bundle.min.js"></script>
   <script src="/assets/js/iot-dashboard.js"></script>
-
+  <script src="/assets/js/main.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/aws-amplify@latest/dist/aws-amplify.min.js"></script>
+  <script src="/assets/js/auth-check.js"></script>
+  <!-- Amplify Wait + Auth Check Loader -->
   <script>
-    document.addEventListener("DOMContentLoaded", async () => {
-      try {
-        const { Auth } = window.Amplify;
-        await Auth.currentAuthenticatedUser();
-        console.log("User is authenticated — IoT dashboard will load automatically.");
-        // Do not re-call chart or MQTT functions here
-      } catch (err) {
-        console.warn("IoT dashboard not initialized — user not signed in:", err.message);
+    function loadAuthCheckAndStart() {
+      console.log('AWS Amplify ready — loading auth-check.js');
+      const script = document.createElement('script');
+      script.src = '/assets/js/auth-check.js';
+      script.onload = () => {
+        console.log('auth-check.js loaded');
+
+        // Now safely check authentication
+        const Amplify = window.Amplify;
+        const Auth = Amplify?.Auth;
+
+        if (!Amplify || !Auth) {
+          console.error("Amplify loaded but modules missing.");
+          return;
+        }
+
+        Auth.currentAuthenticatedUser()
+          .then(() => {
+            console.log("User is authenticated — IoT dashboard will load automatically.");
+          })
+          .catch((err) => {
+            console.warn("User not signed in:", err.message);
+          });
+      };
+      script.onerror = () => console.error('Failed to load auth-check.js');
+      document.body.appendChild(script);
+    }
+
+    function waitForAmplify(attempts = 0) {
+      if (window.Amplify && window.Amplify.Auth) {
+        loadAuthCheckAndStart();
+      } else if (attempts < 10) {
+        console.warn(`Waiting for AWS Amplify... (attempt ${attempts + 1})`);
+        setTimeout(() => waitForAmplify(attempts + 1), 300);
+      } else {
+        console.error('AWS Amplify failed to load after retries.');
       }
-    });
+    }
+
+    document.addEventListener("DOMContentLoaded", () => waitForAmplify());
   </script>
 
 </body>
