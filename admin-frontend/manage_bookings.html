@@ -47,7 +47,7 @@
             <span class="text">Bookings</span>
           </a>
         </li>
-                <li class="nav-item active">
+        <li class="nav-item active">
           <a href="/admin-frontend/iot-dashboard.html">
             <span class="icon"><i class="lni lni-stats-up"></i></span>
             <span class="text">IoT Live Stats</span>
@@ -338,6 +338,12 @@
 
       tbody.innerHTML = "";
       filtered.forEach((b, index) => {
+        const bookingId = b.BookingID || b.bookingId;
+        if (!bookingId) {
+          console.warn("Skipping booking due to missing BookingID:", b);
+          return;
+        }
+
         const statusBadge = {
           "Pending": "bg-warning",
           "Confirmed": "bg-primary",
@@ -354,50 +360,54 @@
 
         const row = document.createElement("tr");
         row.innerHTML = `
-  <td>${index + 1}</td>
-  <td><strong>${b.PetName}</strong></td>
-  <td>${b.OwnerName}</td>
-  <td><span class="badge ${statusBadge} text-white">${b.Status}</span></td>
-  <td>
-    <div class="action">
-      <button class="text-primary" title="View Details" data-booking='${encodeURIComponent(JSON.stringify(b))}' onclick="openBookingModal(this)">
-        <span class="material-icons">visibility</span>
-      </button>
-      ${showConfirm ? `
-        <button class="text-warning" title="Confirm" onclick="confirmBooking('${b.BookingID}')">
-          <span class="material-icons">check_circle</span>
-        </button>` : ""}
-      ${showCheckIn ? `
-        <button class="text-info" title="Check In" onclick="checkinBooking('${b.BookingID}')">
-          <span class="material-icons">login</span>
-        </button>` : ""}
-      ${showCheckout ? `
-        <button class="text-success" title="Check Out" onclick="checkoutBooking('${b.BookingID}')">
-          <span class="material-icons">logout</span>
-        </button>` : ""}
-      ${!showRestore ? `
-        <button class="text-danger" title="Cancel" onclick="cancelBooking('${b.BookingID}')">
-          <span class="material-icons">delete</span>
-        </button>` : ""}
-      ${showRestore ? `
-        <button class="text-info" title="Restore" onclick="restoreBooking('${b.BookingID}')">
-          <span class="material-icons">restore</span>
-        </button>` : ""}
-      ${showQR ? `
-        <button class="text-secondary" title="QR Code" data-url="${b.QRCodeURL || 'data:image/png;base64,' + b.QRBase64}" onclick="showQRModal(this)">
-          <span class="material-icons">qr_code</span>
-        </button>` : ""}
-    </div>
-  </td>
-`;
+      <td>${index + 1}</td>
+      <td><strong>${b.PetName}</strong></td>
+      <td>${b.OwnerName}</td>
+      <td><span class="badge ${statusBadge} text-white">${b.Status}</span></td>
+      <td>
+        <div class="action">
+          <button class="text-primary" title="View Details" data-booking='${encodeURIComponent(JSON.stringify(b))}' onclick="openBookingModal(this)">
+            <span class="material-icons">visibility</span>
+          </button>
+          ${showConfirm ? `
+            <button class="text-warning" title="Confirm" onclick="confirmBooking('${bookingId}')">
+              <span class="material-icons">check_circle</span>
+            </button>` : ""}
+          ${showCheckIn ? `
+            <button class="text-info" title="Check In" onclick="checkinBooking('${bookingId}')">
+              <span class="material-icons">login</span>
+            </button>` : ""}
+          ${showCheckout ? `
+            <button class="text-success" title="Check Out" onclick="checkoutBooking('${bookingId}')">
+              <span class="material-icons">logout</span>
+            </button>` : ""}
+          ${!showRestore ? `
+            <button class="text-danger" title="Cancel" onclick="cancelBooking('${bookingId}')">
+              <span class="material-icons">delete</span>
+            </button>` : ""}
+          ${showRestore ? `
+            <button class="text-info" title="Restore" onclick="restoreBooking('${bookingId}')">
+              <span class="material-icons">restore</span>
+            </button>` : ""}
+          ${showQR ? `
+            <button class="text-secondary" title="QR Code" data-url="${b.QRCodeURL || 'data:image/png;base64,' + b.QRBase64}" onclick="showQRModal(this)">
+              <span class="material-icons">qr_code</span>
+            </button>` : ""}
+        </div>
+      </td>
+    `;
 
         tbody.appendChild(row);
       });
     }
-
-
-
+    // Booking action functions
     async function performBookingAction(id, action, confirmMessage, successMessage, errorMessage) {
+      if (!id || typeof id !== "string" || id.trim() === "") {
+        console.error(`Invalid BookingID passed to performBookingAction for action "${action}":`, id);
+        showToast("Invalid booking ID. Please refresh and try again.", true);
+        return;
+      }
+
       if (!confirm(confirmMessage)) return;
 
       const actionUrlMap = {
@@ -430,22 +440,47 @@
     }
 
     async function cancelBooking(id) {
+      if (!id || typeof id !== "string" || id.trim() === "") {
+        showToast("Missing Booking ID. Please refresh and try again.", true);
+        console.error("cancelBooking called with invalid id:", id);
+        return;
+      }
       await performBookingAction(id, "cancel", "Cancel this booking?", "Cancelled", "Error cancelling booking");
     }
 
     async function confirmBooking(id) {
+      if (!id || typeof id !== "string" || id.trim() === "") {
+        showToast("Missing Booking ID. Please refresh and try again.", true);
+        console.error("confirmBooking called with invalid id:", id);
+        return;
+      }
       await performBookingAction(id, "confirm", "Confirm this booking?", "Confirmed", "Error confirming booking");
     }
 
     async function checkinBooking(id) {
+      if (!id || typeof id !== "string" || id.trim() === "") {
+        showToast("Missing Booking ID. Please refresh and try again.", true);
+        console.error("checkinBooking called with invalid id:", id);
+        return;
+      }
       await performBookingAction(id, "checkin", "Mark guest as Checked-In?", "Checked-In", "Error checking in");
     }
 
     async function checkoutBooking(id) {
+      if (!id || typeof id !== "string" || id.trim() === "") {
+        showToast("Missing Booking ID. Please refresh and try again.", true);
+        console.error("checkoutBooking called with invalid id:", id);
+        return;
+      }
       await performBookingAction(id, "checkout", "Check out this guest?", "Checked Out", "Error checking out");
     }
 
     async function restoreBooking(id) {
+      if (!id || typeof id !== "string" || id.trim() === "") {
+        showToast("Missing Booking ID. Please refresh and try again.", true);
+        console.error("restoreBooking called with invalid id:", id);
+        return;
+      }
       await performBookingAction(id, "restore", "Restore this booking?", "Restored", "Error restoring booking");
     }
 
@@ -516,9 +551,6 @@
       img.src = qrUrl;
       new bootstrap.Modal(document.getElementById("qrModal")).show();
     }
-
-
-
 
   </script>
 
