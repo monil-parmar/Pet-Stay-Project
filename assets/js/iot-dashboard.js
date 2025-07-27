@@ -112,27 +112,27 @@ async function connectToIoTDashboard() {
     });
 
     mqttClient.on('connect', () => {
-      console.log('✅ Connected to AWS IoT Core');
+      console.log('Connected to AWS IoT Core');
       mqttClient.subscribe(IOT_TOPIC_DASHBOARD, err => {
-        if (err) console.error('❌ Subscription error:', err.message);
-        else console.log(`📡 Subscribed to topic: ${IOT_TOPIC_DASHBOARD}`);
+        if (err) console.error('Subscription error:', err.message);
+        else console.log(`Subscribed to topic: ${IOT_TOPIC_DASHBOARD}`);
       });
     });
 
     mqttClient.on('message', (topic, payload) => {
       try {
         const data = JSON.parse(payload.toString());
-        console.log('📨 IoT message received:', data);
+        console.log('IoT message received:', data);
         updateDashboardStats(data);
       } catch (err) {
-        console.error('❌ Failed to parse IoT message:', err);
+        console.error('Failed to parse IoT message:', err);
       }
     });
 
-    mqttClient.on('error', err => console.error('❌ MQTT error:', err.message || err));
+    mqttClient.on('error', err => console.error('MQTT error:', err.message || err));
 
   } catch (err) {
-    console.error('❌ Failed to authenticate or connect:', err);
+    console.error('Failed to authenticate or connect:', err);
   }
 }
 
@@ -198,10 +198,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   try {
     await window.Amplify.Auth.currentAuthenticatedUser();
-    console.log("🔐 User authenticated. Connecting to IoT...");
+    console.log("User authenticated. Connecting to IoT...");
     connectToIoTDashboard();
   } catch {
-    console.warn("❌ User not authenticated — skipping IoT connection");
+    console.warn("User not authenticated — skipping IoT connection");
     ["statBookingTrends", "statCurrentGuests", "statAvailableRooms", "statSpeciesStats"]
       .forEach(id => {
         const el = document.getElementById(id);
