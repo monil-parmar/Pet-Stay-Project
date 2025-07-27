@@ -20,9 +20,7 @@
   <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/crypto-js@4.1.1/crypto-js.min.js"></script>
   <script src="https://unpkg.com/aws-amplify@5.0.4/dist/aws-amplify.min.js"></script>
-  <!-- Config and AWS Amplify -->
   <script src="/assets/js/config.js"></script>
-
 </head>
 
 <body>
@@ -208,13 +206,12 @@
     </footer>
   </main>
 
-  <!-- JS -->
+  <!-- JS Dependencies -->
   <script src="/assets/js/bootstrap.bundle.min.js"></script>
   <script src="/assets/js/iot-dashboard.js"></script>
   <script src="/assets/js/main.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/aws-amplify@latest/dist/aws-amplify.min.js"></script>
-  <script src="/assets/js/auth-check.js"></script>
-  <!-- Amplify Wait + Auth Check Loader -->
+
+  <!-- Load auth-check.js AFTER confirming Amplify is ready -->
   <script>
     function loadAuthCheckAndStart() {
       console.log('AWS Amplify ready — loading auth-check.js');
@@ -223,7 +220,6 @@
       script.onload = () => {
         console.log('auth-check.js loaded');
 
-        // Now safely check authentication
         const Amplify = window.Amplify;
         const Auth = Amplify?.Auth;
 
@@ -234,18 +230,23 @@
 
         Auth.currentAuthenticatedUser()
           .then(() => {
-            console.log("User is authenticated — IoT dashboard will load automatically.");
+            console.log("User is authenticated — initializing IoT...");
+            if (typeof connectToIoTDashboard === 'function') {
+              connectToIoTDashboard();
+            } else {
+              console.warn("connectToIoTDashboard() not defined yet.");
+            }
           })
           .catch((err) => {
             console.warn("User not signed in:", err.message);
           });
       };
-      script.onerror = () => console.error('Failed to load auth-check.js');
+      script.onerror = () => console.error(' Failed to load auth-check.js');
       document.body.appendChild(script);
     }
 
     function waitForAmplify(attempts = 0) {
-      if (window.Amplify && window.Amplify.Auth) {
+      if (window.Amplify?.Auth && typeof window.Amplify?.configure === 'function') {
         loadAuthCheckAndStart();
       } else if (attempts < 10) {
         console.warn(`Waiting for AWS Amplify... (attempt ${attempts + 1})`);
@@ -257,7 +258,6 @@
 
     document.addEventListener("DOMContentLoaded", () => waitForAmplify());
   </script>
-
 </body>
 
 </html>
