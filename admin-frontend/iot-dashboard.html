@@ -14,13 +14,45 @@
   <link rel="stylesheet" href="/assets/css/main.css" />
   <link href="https://cdn.lineicons.com/3.0/lineicons.css" rel="stylesheet" />
 
-  <!-- Chart / AWS / MQTT / Crypto -->
+  <!--  Load AWS Amplify FIRST -->
+  <script src="https://unpkg.com/aws-amplify@5.0.4/dist/aws-amplify.min.js" onload="console.log('Amplify loaded')"
+    onerror="console.error('Amplify failed to load')"></script>
+
+  <!-- Then other libraries -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.4/dist/Chart.min.js"></script>
   <script src="https://sdk.amazonaws.com/js/aws-sdk-2.1471.0.min.js"></script>
   <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/crypto-js@4.1.1/crypto-js.min.js"></script>
-  <script src="https://unpkg.com/aws-amplify@5.0.4/dist/aws-amplify.min.js"></script>
+
+
+  <!-- App Config -->
   <script src="/assets/js/config.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    if (window.PETSTAY_CONFIG) {
+      Amplify.configure({
+        Auth: {
+          region: window.PETSTAY_CONFIG.AWS_REGION,
+          userPoolId: window.PETSTAY_CONFIG.COGNITO_USER_POOL_ID,
+          userPoolWebClientId: window.PETSTAY_CONFIG.COGNITO_USER_POOL_CLIENT_ID,
+          identityPoolId: window.PETSTAY_CONFIG.IDENTITY_POOL_ID,
+          mandatorySignIn: true,
+          oauth: {
+            domain: window.PETSTAY_CONFIG.COGNITO_DOMAIN,
+            scope: ['email', 'openid', 'profile'],
+            redirectSignIn: window.PETSTAY_CONFIG.REDIRECT_SIGN_IN_URL,
+            redirectSignOut: window.PETSTAY_CONFIG.REDIRECT_SIGN_OUT_URL,
+            responseType: 'code'
+          }
+        }
+      });
+      console.log("AWS Amplify configured");
+    } else {
+      console.error("PETSTAY_CONFIG not found");
+    }
+  });
+</script>
+
 </head>
 
 <body>
@@ -241,7 +273,7 @@
             console.warn("User not signed in:", err.message);
           });
       };
-      script.onerror = () => console.error(' Failed to load auth-check.js');
+      script.onerror = () => console.error('❌ Failed to load auth-check.js');
       document.body.appendChild(script);
     }
 
@@ -249,10 +281,10 @@
       if (window.Amplify?.Auth && typeof window.Amplify?.configure === 'function') {
         loadAuthCheckAndStart();
       } else if (attempts < 10) {
-        console.warn(`Waiting for AWS Amplify... (attempt ${attempts + 1})`);
+        console.warn(`⏳ Waiting for AWS Amplify... (attempt ${attempts + 1})`);
         setTimeout(() => waitForAmplify(attempts + 1), 300);
       } else {
-        console.error('AWS Amplify failed to load after retries.');
+        console.error('❌ AWS Amplify failed to load after retries.');
       }
     }
 

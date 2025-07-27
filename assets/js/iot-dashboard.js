@@ -1,5 +1,7 @@
 let bookingTrendChart = null;
-let bookingTrendData = {
+let speciesPieChart = null;
+
+const bookingTrendData = {
   labels: [],
   datasets: [{
     label: "Bookings",
@@ -10,11 +12,20 @@ let bookingTrendData = {
   }]
 };
 
+const speciesPieData = {
+  labels: [],
+  datasets: [{
+    label: "Pet Species",
+    data: [],
+    backgroundColor: ["#4F46E5", "#10B981", "#F59E0B", "#EF4444", "#3B82F6", "#8B5CF6"]
+  }]
+};
+
+// Initialize Booking Trend Chart
 function initBookingTrendChart() {
   const ctxElement = document.getElementById("IoTBookingTrendChart");
   if (!ctxElement) return console.error("IoTBookingTrendChart canvas not found");
-  const ctx = ctxElement.getContext("2d");
-  bookingTrendChart = new Chart(ctx, {
+  bookingTrendChart = new Chart(ctxElement.getContext("2d"), {
     type: "line",
     data: bookingTrendData,
     options: {
@@ -27,20 +38,11 @@ function initBookingTrendChart() {
   });
 }
 
-let speciesPieChart = null;
-let speciesPieData = {
-  labels: [],
-  datasets: [{
-    label: "Pet Species",
-    data: [],
-    backgroundColor: ["#4F46E5", "#10B981", "#F59E0B", "#EF4444", "#3B82F6", "#8B5CF6"]
-  }]
-};
-
+// Initialize Species Pie Chart
 function initSpeciesPieChart() {
   const ctx = document.getElementById("SpeciesPieChart");
   if (!ctx) return console.warn("SpeciesPieChart element not found");
-  speciesPieChart = new Chart(ctx, {
+  speciesPieChart = new Chart(ctx.getContext("2d"), {
     type: "pie",
     data: speciesPieData,
     options: {
@@ -50,9 +52,9 @@ function initSpeciesPieChart() {
   });
 }
 
-// AWS IoT Signature Helpers
-function sha256(message) {
-  return CryptoJS.SHA256(message).toString(CryptoJS.enc.Hex);
+// AWS SigV4 Signing Helpers
+function sha256(msg) {
+  return CryptoJS.SHA256(msg).toString(CryptoJS.enc.Hex);
 }
 function hmac(key, msg) {
   return CryptoJS.HmacSHA256(CryptoJS.enc.Utf8.parse(msg), key);
@@ -95,26 +97,23 @@ let mqttClient = null;
 
 async function connectToIoTDashboard() {
   const { AWS_REGION, IOT_ENDPOINT, IOT_TOPIC_DASHBOARD, IOT_CLIENT_PREFIX } = window.PETSTAY_CONFIG;
+
   try {
     const creds = await window.Amplify.Auth.currentCredentials();
-    const signedUrl = signUrl(IOT_ENDPOINT, AWS_REGION, {
-      accessKeyId: creds.accessKeyId,
-      secretAccessKey: creds.secretAccessKey,
-      sessionToken: creds.sessionToken
-    });
+    const signedUrl = signUrl(IOT_ENDPOINT, AWS_REGION, creds);
 
-    if (mqttClient) mqttClient.end(true);
+    if (mqttClient) mqttClient.end(true); // Clean up existing client
 
     mqttClient = mqtt.connect(signedUrl, {
       clientId: `${IOT_CLIENT_PREFIX}${Math.floor(Math.random() * 100000)}`,
       keepalive: 60,
       clean: true,
-      reconnectPeriod: 0
+      reconnectPeriod: 10000 // Let MQTT handle reconnects
     });
 
     mqttClient.on('connect', () => {
       console.log('✅ Connected to AWS IoT Core');
-      mqttClient.subscribe(IOT_TOPIC_DASHBOARD, (err) => {
+      mqttClient.subscribe(IOT_TOPIC_DASHBOARD, err => {
         if (err) console.error('❌ Subscription error:', err.message);
         else console.log(`📡 Subscribed to topic: ${IOT_TOPIC_DASHBOARD}`);
       });
@@ -130,24 +129,16 @@ async function connectToIoTDashboard() {
       }
     });
 
-    mqttClient.on('close', () => {
-      console.warn('🔌 MQTT connection closed. Reconnecting in 10s...');
-      setTimeout(connectToIoTDashboard, 10000);
-    });
-
-    mqttClient.on('error', (err) => {
-      console.error('❌ MQTT error:', err.message || err);
-    });
+    mqttClient.on('error', err => console.error('❌ MQTT error:', err.message || err));
 
   } catch (err) {
     console.error('❌ Failed to authenticate or connect:', err);
-    setTimeout(connectToIoTDashboard, 10000);
   }
 }
 
+// Update DOM and charts from IoT payload
 function updateDashboardStats(data) {
   const now = new Date().toLocaleTimeString();
-
   const setText = (id, value) => {
     const el = document.getElementById(id);
     if (el) el.textContent = value;
@@ -158,7 +149,10 @@ function updateDashboardStats(data) {
   } else if (data.metric === "availableRooms") {
     setText("statAvailableRooms", data.value);
   } else if (data.metric === "speciesStats") {
-    setText("statSpeciesStats", JSON.stringify(data.value));
+    const speciesStr = typeof data.value === 'object'
+      ? Object.entries(data.value).map(([k, v]) => `${k}: ${v}`).join(' | ')
+      : data.value;
+    setText("statSpeciesStats", speciesStr);
   } else if (data.metric === "bookingTrends") {
     const latest = data.value[data.value.length - 1];
     setText("statBookingTrends", latest);
@@ -175,13 +169,10 @@ function updateDashboardStats(data) {
     const val = data.value;
     if (val.currentGuests !== undefined) setText("statCurrentGuests", val.currentGuests);
     if (val.availableRooms !== undefined) setText("statAvailableRooms", val.availableRooms);
-    if (val.petSpecies !== undefined) {
-      const stat = typeof val.petSpecies === 'object'
-        ? Object.entries(val.petSpecies).map(([k, v]) => `${k}: ${v}`).join(', ')
-        : val.petSpecies;
+    if (val.petSpecies !== undefined && typeof val.petSpecies === 'object') {
+      const stat = Object.entries(val.petSpecies).map(([k, v]) => `${k}: ${v}`).join(' | ');
       setText("statSpeciesStats", stat);
-
-      if (speciesPieChart && typeof val.petSpecies === 'object') {
+      if (speciesPieChart) {
         speciesPieChart.data.labels = Object.keys(val.petSpecies);
         speciesPieChart.data.datasets[0].data = Object.values(val.petSpecies);
         speciesPieChart.update();
@@ -200,28 +191,21 @@ function updateDashboardStats(data) {
   }
 }
 
-// Start when DOM is ready + user authenticated
-document.addEventListener("DOMContentLoaded", () => {
+// Start logic on DOM load
+document.addEventListener("DOMContentLoaded", async () => {
   initBookingTrendChart();
   initSpeciesPieChart();
 
-  let attempts = 0;
-  const maxAttempts = 20;
-
-  const waitForAuth = setInterval(() => {
-    attempts++;
-    if (window.petstayCurrentEmail && window.Amplify?.Auth) {
-      clearInterval(waitForAuth);
-      console.log("🔐 User authenticated. Connecting to IoT...");
-      connectToIoTDashboard();
-    } else if (attempts >= maxAttempts) {
-      clearInterval(waitForAuth);
-      console.warn("❌ Auth check failed after retries — skipping IoT connection");
-      ["statBookingTrends", "statCurrentGuests", "statAvailableRooms", "statSpeciesStats"]
-        .forEach(id => {
-          const el = document.getElementById(id);
-          if (el) el.textContent = "Auth failed";
-        });
-    }
-  }, 300);
+  try {
+    await window.Amplify.Auth.currentAuthenticatedUser();
+    console.log("🔐 User authenticated. Connecting to IoT...");
+    connectToIoTDashboard();
+  } catch {
+    console.warn("❌ User not authenticated — skipping IoT connection");
+    ["statBookingTrends", "statCurrentGuests", "statAvailableRooms", "statSpeciesStats"]
+      .forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = "Auth failed";
+      });
+  }
 });
