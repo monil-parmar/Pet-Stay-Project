@@ -10,15 +10,22 @@
 
   <!-- ========== All CSS files linkup ========= -->
   <link rel="stylesheet" href="/assets/css/bootstrap.min.css" />
-  <link rel="stylesheet" href="/assets/css/lineicons.css" rel="stylesheet" type="text/css" />
-  <link href="https://cdn.lineicons.com/2.0/LineIcons.css" rel="stylesheet">
-
-  <link rel="stylesheet" href="/assets/css/materialdesignicons.min.css" rel="stylesheet" type="text/css" />
-  <!-- <link rel="stylesheet" href="/assets/css/fullcalendar.css" /> -->
+  <link rel="stylesheet" href="/assets/css/lineicons.css" />
+  <link href="https://cdn.lineicons.com/2.0/LineIcons.css" rel="stylesheet" />
+  <link rel="stylesheet" href="/assets/css/materialdesignicons.min.css" />
   <link rel="stylesheet" href="/assets/css/main.css" />
+
+  <!-- ========== JS Dependencies ========= -->
   <script src="/assets/js/Chart.min.js"></script>
+
+  <!-- Load AWS Amplify BEFORE config/auth-check -->
+  <script src="https://cdn.jsdelivr.net/npm/aws-amplify@5.0.4/dist/aws-amplify.min.js"></script>
+
+  <!-- Global app config -->
   <script src="/assets/js/config.js"></script>
 
+  <!-- Amplify Auth + Cognito Identity setup -->
+  <script src="/assets/js/auth-check.js"></script>
 </head>
 
 <body>
