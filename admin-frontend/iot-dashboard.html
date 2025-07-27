@@ -12,7 +12,7 @@
   <link rel="stylesheet" href="/assets/css/bootstrap.min.css" />
   <link rel="stylesheet" href="/assets/css/materialdesignicons.min.css" />
   <link rel="stylesheet" href="/assets/css/main.css" />
-  <link rel="stylesheet" href="/assets/css/lineicons.css" />
+  <link href="https://cdn.lineicons.com/3.0/lineicons.css" rel="stylesheet">
 
 
   <!-- JS Dependencies -->
@@ -213,6 +213,20 @@
   <!-- JS -->
   <script src="/assets/js/bootstrap.bundle.min.js"></script>
   <script src="/assets/js/iot-dashboard.js"></script>
+
+ <script>
+  document.addEventListener("DOMContentLoaded", async () => {
+    try {
+      const { Auth } = window.Amplify;
+      await Auth.currentAuthenticatedUser();
+      console.log("User is authenticated — IoT dashboard will load automatically.");
+      // Do not re-call chart or MQTT functions here
+    } catch (err) {
+      console.warn("IoT dashboard not initialized — user not signed in:", err.message);
+    }
+  });
+</script>
+
 </body>
 
 </html>

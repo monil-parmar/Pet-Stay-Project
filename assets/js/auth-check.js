@@ -1,20 +1,18 @@
+// auth-check.js (Refined Version)
 console.log("auth-check.js loaded");
 
-// Load Amplify core modules from the global AWS Amplify script (if available)
 const Amplify = window.aws_amplify?.Amplify || window.Amplify;
 const Auth = window.aws_amplify?.Auth || window.Amplify?.Auth;
 const Hub = window.aws_amplify?.Hub || window.Amplify?.Hub;
 const AWS = window.AWS;
 
-// Save current page URL (origin + path) for potential redirects
 const currentUrl = window.location.origin + window.location.pathname;
 
-// Define Amplify Auth configuration
 const amplifyAuthConfig = {
   region: 'us-east-1',
   userPoolId: 'us-east-1_QIxGKKFzG',
   userPoolWebClientId: '7pk31b8a5ak2b7aj42qimaibhc',
-      identityPoolId: 'us-east-1:25fbdcc1-9e3d-4655-adbf-679d2f895c0c', 
+  identityPoolId: 'us-east-1:25fbdcc1-9e3d-4655-adbf-679d2f895c0c',
   oauth: {
     domain: 'us-east-1qixgkkfzg.auth.us-east-1.amazoncognito.com',
     scope: ['email', 'openid', 'phone'],
@@ -24,12 +22,8 @@ const amplifyAuthConfig = {
   }
 };
 
-// Configure AWS SDK region
 AWS.config.region = 'us-east-1';
 
-/**
- * Function to attach IoT policy to Cognito identity
- */
 const attachPolicyToIdentity = async (identityId) => {
   const iot = new AWS.Iot({ region: 'us-east-1' });
   try {
@@ -54,16 +48,12 @@ if (!Amplify || typeof Amplify.configure !== 'function') {
 } else {
   Amplify.configure({ Auth: amplifyAuthConfig });
 
-  Auth.currentSession()
-    .then(session => {
-      console.log("Session exists:", session);
-      checkUser();
-    })
-    .catch(err => {
-      console.warn("No active session yet:", err.message);
-    });
+  let hasCheckedUser = false;
 
   async function checkUser(retry = false) {
+    if (hasCheckedUser && !retry) return;
+    hasCheckedUser = true;
+
     const urlParams = new URLSearchParams(window.location.search);
 
     try {
@@ -76,7 +66,6 @@ if (!Amplify || typeof Amplify.configure !== 'function') {
 
       console.log("Email from ID token payload:", email);
 
-      // Attach IoT policy
       const identityCredentials = await Auth.currentCredentials();
       const identityId = identityCredentials.identityId;
       console.log("Cognito Identity ID:", identityId);
@@ -89,8 +78,10 @@ if (!Amplify || typeof Amplify.configure !== 'function') {
         const cleanUrl = window.location.origin + window.location.pathname;
         window.history.replaceState({}, document.title, cleanUrl);
       }
+
     } catch (err) {
       console.warn("Could not fetch authenticated user:", err.name, err.message);
+
       if (!retry) {
         console.warn("Retrying user check after 1s...");
         return setTimeout(() => checkUser(true), 1000);
@@ -100,7 +91,6 @@ if (!Amplify || typeof Amplify.configure !== 'function') {
 
       const justCameFromIndex = urlParams.get("from") === "index";
       const cameFromCognito = urlParams.get("from") === "cognito";
-
       if (justCameFromIndex || cameFromCognito) {
         console.warn("Avoiding redirect loop after login");
         return;
@@ -133,6 +123,10 @@ if (!Amplify || typeof Amplify.configure !== 'function') {
     if (dropdownEl) {
       dropdownEl.textContent = fallback;
       console.log("Email set in #adminEmailDropdown:", fallback);
+    }
+
+    if (!emailEl && !dropdownEl) {
+      console.warn("⚠️ Could not find any admin email display elements.");
     }
   }
 
@@ -195,4 +189,4 @@ if (!Amplify || typeof Amplify.configure !== 'function') {
       retryAttachSignOut();
     }, 500);
   });
-}
+} // end else
