@@ -34,9 +34,6 @@ for (const key in window.PETSTAY_CONFIG) {
   }
 }
 
-
-
-
 // window.PETSTAY_CONFIG = {
 //   AWS_REGION: '{{AWS_REGION}}',  // e.g., 'us-east-1'
 //   COGNITO_USER_POOL_ID: '{{COGNITO_USER_POOL_ID}}',
