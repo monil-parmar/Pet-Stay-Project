@@ -56,12 +56,12 @@
           policyName: 'PetStayAdminIoTAccessPolicy',
           target: identityId
         }).promise();
-        console.log("✅ IoT policy attached to:", identityId);
+        console.log("IoT policy attached to:", identityId);
       } catch (error) {
         if (error.code === 'ResourceAlreadyExistsException') {
-          console.log("ℹ️ IoT policy already attached to:", identityId);
+          console.log("ℹIoT policy already attached to:", identityId);
         } else {
-          console.error("❌ Failed to attach IoT policy:", error);
+          console.error("Failed to attach IoT policy:", error);
         }
       }
     }
