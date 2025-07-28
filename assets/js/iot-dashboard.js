@@ -94,6 +94,18 @@ function signUrl(endpoint, region, credentials) {
 }
 
 let mqttClient = null;
+let statsUpdateTimer = null;
+let latestStatsPayload = null;
+
+function queueStatsUpdate(data) {
+  latestStatsPayload = data;
+  if (statsUpdateTimer) clearTimeout(statsUpdateTimer);
+  statsUpdateTimer = setTimeout(() => {
+    updateDashboardStats(latestStatsPayload);
+    latestStatsPayload = null;
+    statsUpdateTimer = null;
+  }, 2000); // 2-second debounce window
+}
 
 async function connectToIoTDashboard() {
   const { AWS_REGION, IOT_ENDPOINT, IOT_TOPIC_DASHBOARD, IOT_CLIENT_PREFIX } = window.PETSTAY_CONFIG;
@@ -108,7 +120,7 @@ async function connectToIoTDashboard() {
       clientId: `${IOT_CLIENT_PREFIX}${Math.floor(Math.random() * 100000)}`,
       keepalive: 60,
       clean: true,
-      reconnectPeriod: 10000 // Let MQTT handle reconnects
+      reconnectPeriod: 10000
     });
 
     mqttClient.on('connect', () => {
@@ -123,7 +135,7 @@ async function connectToIoTDashboard() {
       try {
         const data = JSON.parse(payload.toString());
         console.log('IoT message received:', data);
-        updateDashboardStats(data);
+        queueStatsUpdate(data);
       } catch (err) {
         console.error('Failed to parse IoT message:', err);
       }
@@ -136,7 +148,6 @@ async function connectToIoTDashboard() {
   }
 }
 
-// Update DOM and charts from IoT payload
 let lastStats = {
   currentGuests: null,
   availableRooms: null,
@@ -200,8 +211,6 @@ function updateDashboardStats(data) {
   }
 }
 
-
-// Start logic on DOM load
 document.addEventListener("DOMContentLoaded", async () => {
   initBookingTrendChart();
   initSpeciesPieChart();
@@ -212,10 +221,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     connectToIoTDashboard();
   } catch {
     console.warn("User not authenticated — skipping IoT connection");
-    ["statBookingTrends", "statCurrentGuests", "statAvailableRooms", "statSpeciesStats"]
-      .forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.textContent = "Auth failed";
-      });
+    ["statBookingTrends", "statCurrentGuests", "statAvailableRooms", "statSpeciesStats"].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = "Auth failed";
+    });
   }
 });
