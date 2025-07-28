@@ -208,3 +208,87 @@ if (!Amplify || typeof Amplify.configure !== 'function') {
     }, 500);
   });
 }
+function loadDashboardAndAuth() {
+  const dashboardScript = document.createElement('script');
+  dashboardScript.src = '/assets/js/iot-dashboard.js';
+  dashboardScript.onload = () => {
+    if (!window.__PETSTAY_AUTH_CHECK_LOADED__) {
+      const authScript = document.createElement('script');
+      authScript.src = '/assets/js/auth-check.js';
+      authScript.onload = () => {
+        window.__PETSTAY_AUTH_CHECK_LOADED__ = true;
+
+        const Auth = window.Amplify?.Auth;
+        if (!Auth) return;
+
+        Auth.currentAuthenticatedUser()
+          .then(() => {
+            console.log("User is authenticated — initializing IoT...");
+            if (typeof connectToIoTDashboard === 'function') {
+              connectToIoTDashboard();
+            }
+
+            // Update UI with email
+            if (typeof checkUser === 'function') {
+              checkUser(true); // true = only show email, don't redirect
+            } else {
+              console.warn("checkUser() not defined after auth-check.js load.");
+            }
+          })
+          .catch(err => console.warn("User not signed in:", err.message));
+      };
+      authScript.onerror = () => console.error('Failed to load auth-check.js');
+      document.body.appendChild(authScript);
+    } else {
+      console.log("auth-check.js already loaded — skipping");
+
+      const Auth = window.Amplify?.Auth;
+      if (Auth) {
+        Auth.currentAuthenticatedUser()
+          .then(() => {
+            if (typeof checkUser === 'function') {
+              checkUser(true);
+            }
+          })
+          .catch(() => {});
+      }
+    }
+  };
+  dashboardScript.onerror = () => console.error('Failed to load iot-dashboard.js');
+  document.body.appendChild(dashboardScript);
+}
+
+
+  function waitForAmplify(attempts = 0) {
+    const cfg = window.PETSTAY_CONFIG;
+    const Amplify = window.aws_amplify?.default;
+
+    if (Amplify?.configure && Amplify?.Auth && cfg) {
+      window.Amplify = Amplify; // Assign to global so rest of code works
+      Amplify.configure({
+        Auth: {
+          region: cfg.AWS_REGION,
+          userPoolId: cfg.COGNITO_USER_POOL_ID,
+          userPoolWebClientId: cfg.COGNITO_USER_POOL_CLIENT_ID,
+          identityPoolId: cfg.IDENTITY_POOL_ID,
+          mandatorySignIn: true,
+          oauth: {
+            domain: cfg.COGNITO_DOMAIN,
+            scope: ['email', 'openid', 'profile'],
+            redirectSignIn: cfg.REDIRECT_SIGN_IN_URL,
+            redirectSignOut: cfg.REDIRECT_SIGN_OUT_URL,
+            responseType: 'code'
+          }
+        }
+      });
+      console.log("AWS Amplify v4 configured");
+      loadDashboardAndAuth();
+    } else if (attempts < 10) {
+      console.warn(`Waiting for Amplify... (attempt ${attempts + 1})`);
+      setTimeout(() => waitForAmplify(attempts + 1), 300);
+    } else {
+      console.error("AWS Amplify failed to load after retries");
+    }
+  }
+
+  window.addEventListener("load", () => waitForAmplify());
