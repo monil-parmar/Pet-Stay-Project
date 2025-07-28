@@ -21,7 +21,7 @@ const speciesPieData = {
   }]
 };
 
-// Initialize Booking Trend Chart
+// Booking Trend Chart
 function initBookingTrendChart() {
   const ctxElement = document.getElementById("IoTBookingTrendChart");
   if (!ctxElement) return console.error("IoTBookingTrendChart canvas not found");
@@ -38,7 +38,7 @@ function initBookingTrendChart() {
   });
 }
 
-// Initialize Species Pie Chart
+// Species Pie Chart
 function initSpeciesPieChart() {
   const ctx = document.getElementById("SpeciesPieChart");
   if (!ctx) return console.warn("SpeciesPieChart element not found");
@@ -50,6 +50,20 @@ function initSpeciesPieChart() {
       plugins: { legend: { position: 'bottom' } }
     }
   });
+}
+
+// Preload historical booking trend
+function preloadBookingTrend() {
+  fetch("/api/get-booking-trend")
+    .then(res => res.json())
+    .then(data => {
+      if (!bookingTrendChart) return;
+      bookingTrendChart.data.labels = data.map(d => d.time);
+      bookingTrendChart.data.datasets[0].data = data.map(d => d.count);
+      bookingTrendChart.update();
+      console.log("Booking trend preloaded:", data);
+    })
+    .catch(err => console.error("Failed to preload booking trend:", err));
 }
 
 // AWS SigV4 Signing Helpers
@@ -104,7 +118,7 @@ function queueStatsUpdate(data) {
     updateDashboardStats(latestStatsPayload);
     latestStatsPayload = null;
     statsUpdateTimer = null;
-  }, 2000); // 2-second debounce window
+  }, 2000);
 }
 
 async function connectToIoTDashboard() {
@@ -114,7 +128,7 @@ async function connectToIoTDashboard() {
     const creds = await window.Amplify.Auth.currentCredentials();
     const signedUrl = signUrl(IOT_ENDPOINT, AWS_REGION, creds);
 
-    if (mqttClient) mqttClient.end(true); // Clean up existing client
+    if (mqttClient) mqttClient.end(true);
 
     mqttClient = mqtt.connect(signedUrl, {
       clientId: `${IOT_CLIENT_PREFIX}${Math.floor(Math.random() * 100000)}`,
@@ -214,6 +228,7 @@ function updateDashboardStats(data) {
 document.addEventListener("DOMContentLoaded", async () => {
   initBookingTrendChart();
   initSpeciesPieChart();
+  preloadBookingTrend(); 
 
   try {
     await window.Amplify.Auth.currentAuthenticatedUser();
