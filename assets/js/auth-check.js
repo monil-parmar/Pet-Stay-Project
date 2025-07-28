@@ -3,10 +3,12 @@
 console.log("auth-check.js loaded");
 
 // Load Amplify core modules from the global AWS Amplify script (if available)
-const Amplify = window.aws_amplify?.Amplify || window.Amplify;
-const Auth = window.aws_amplify?.Auth || window.Amplify?.Auth;
-const Hub = window.aws_amplify?.Hub || window.Amplify?.Hub;
-
+// const Amplify = window.aws_amplify?.Amplify || window.Amplify;
+// const Auth = window.aws_amplify?.Auth || window.Amplify?.Auth;
+// const Hub = window.aws_amplify?.Hub || window.Amplify?.Hub;
+const Amplify = window.Amplify;
+const Auth = window.Amplify?.Auth;
+const Hub = window.Amplify?.Hub;
 // Save current page URL (origin + path) for potential redirects
 const currentUrl = window.location.origin + window.location.pathname;
 

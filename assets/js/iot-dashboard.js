@@ -121,46 +121,30 @@ function queueStatsUpdate(data) {
   }, 2000);
 }
 
-async function connectToIoTDashboard() {
-  const { AWS_REGION, IOT_ENDPOINT, IOT_TOPIC_DASHBOARD, IOT_CLIENT_PREFIX } = window.PETSTAY_CONFIG;
+mqttClient.on('connect', () => {
+  console.log('Connected to AWS IoT Core');
+  mqttClient.subscribe(IOT_TOPIC_DASHBOARD, err => {
+    if (err) {
+      console.error('Subscription error:', err.message);
+    } else {
+      console.log(`Subscribed to topic: ${IOT_TOPIC_DASHBOARD}`);
 
-  try {
-    const creds = await window.Amplify.Auth.currentCredentials();
-    const signedUrl = signUrl(IOT_ENDPOINT, AWS_REGION, creds);
+      // Update admin email display after connection
+      window.Amplify.Auth.currentSession()
+        .then(session => {
+          const email = session.getIdToken().decodePayload().email || "Unknown admin";
+          const emailEl = document.getElementById("adminEmail");
+          const dropdownEl = document.getElementById("adminEmailDropdown");
+          if (emailEl) emailEl.textContent = email;
+          if (dropdownEl) dropdownEl.textContent = email;
+        })
+        .catch(err => {
+          console.warn("Failed to get admin email after connect:", err);
+        });
+    }
+  });
+});
 
-    if (mqttClient) mqttClient.end(true);
-
-    mqttClient = mqtt.connect(signedUrl, {
-      clientId: `${IOT_CLIENT_PREFIX}${Math.floor(Math.random() * 100000)}`,
-      keepalive: 60,
-      clean: true,
-      reconnectPeriod: 10000
-    });
-
-    mqttClient.on('connect', () => {
-      console.log('Connected to AWS IoT Core');
-      mqttClient.subscribe(IOT_TOPIC_DASHBOARD, err => {
-        if (err) console.error('Subscription error:', err.message);
-        else console.log(`Subscribed to topic: ${IOT_TOPIC_DASHBOARD}`);
-      });
-    });
-
-    mqttClient.on('message', (topic, payload) => {
-      try {
-        const data = JSON.parse(payload.toString());
-        console.log('IoT message received:', data);
-        queueStatsUpdate(data);
-      } catch (err) {
-        console.error('Failed to parse IoT message:', err);
-      }
-    });
-
-    mqttClient.on('error', err => console.error('MQTT error:', err.message || err));
-
-  } catch (err) {
-    console.error('Failed to authenticate or connect:', err);
-  }
-}
 
 let lastStats = {
   currentGuests: null,
@@ -225,11 +209,11 @@ function updateDashboardStats(data) {
   }
 }
 
-// 🔧 FIX: Patch for Amplify v4 CDN — sets window.Amplify
-const Amplify = window.aws_amplify?.default;
-if (Amplify) {
-  window.Amplify = Amplify;
-}
+// // 🔧 FIX: Patch for Amplify v4 CDN — sets window.Amplify
+// const Amplify = window.aws_amplify?.default;
+// if (Amplify) {
+//   window.Amplify = Amplify;
+// }
 
 document.addEventListener("DOMContentLoaded", async () => {
   initBookingTrendChart();
