@@ -211,6 +211,9 @@ if (!Amplify || typeof Amplify.configure !== 'function') {
     }, 500);
   });
 }
+
+
+}
 function loadDashboardAndAuth() {
   const dashboardScript = document.createElement('script');
   dashboardScript.src = '/assets/js/iot-dashboard.js';
@@ -259,5 +262,4 @@ function loadDashboardAndAuth() {
   };
   dashboardScript.onerror = () => console.error('Failed to load iot-dashboard.js');
   document.body.appendChild(dashboardScript);
-}
 }
