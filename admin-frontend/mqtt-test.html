@@ -21,7 +21,7 @@
 <div id="log">Logs will appear here...</div>
 
 <script>
-  // Your actual config values here
+document.addEventListener('DOMContentLoaded', () => {
   window.PETSTAY_CONFIG = {
     AWS_REGION: 'us-east-1',
     COGNITO_USER_POOL_ID: 'us-east-1_QIxGKKFzG',
@@ -45,19 +45,21 @@
     logEl.scrollTop = logEl.scrollHeight;
   }
 
-  // Configure Amplify Auth
-  window.Amplify.Auth.configure({
-    region: window.PETSTAY_CONFIG.AWS_REGION,
-    userPoolId: window.PETSTAY_CONFIG.COGNITO_USER_POOL_ID,
-    userPoolWebClientId: window.PETSTAY_CONFIG.COGNITO_USER_POOL_CLIENT_ID,
-    identityPoolId: window.PETSTAY_CONFIG.IDENTITY_POOL_ID,
-    mandatorySignIn: true,
-    oauth: {
-      domain: window.PETSTAY_CONFIG.COGNITO_DOMAIN,
-      scope: ['email', 'openid', 'profile'],
-      redirectSignIn: window.PETSTAY_CONFIG.REDIRECT_SIGN_IN_URL,
-      redirectSignOut: window.PETSTAY_CONFIG.REDIRECT_SIGN_OUT_URL,
-      responseType: 'code',
+  // Configure Amplify
+  window.Amplify.configure({
+    Auth: {
+      region: window.PETSTAY_CONFIG.AWS_REGION,
+      userPoolId: window.PETSTAY_CONFIG.COGNITO_USER_POOL_ID,
+      userPoolWebClientId: window.PETSTAY_CONFIG.COGNITO_USER_POOL_CLIENT_ID,
+      identityPoolId: window.PETSTAY_CONFIG.IDENTITY_POOL_ID,
+      mandatorySignIn: true,
+      oauth: {
+        domain: window.PETSTAY_CONFIG.COGNITO_DOMAIN,
+        scope: ['email', 'openid', 'profile'],
+        redirectSignIn: window.PETSTAY_CONFIG.REDIRECT_SIGN_IN_URL,
+        redirectSignOut: window.PETSTAY_CONFIG.REDIRECT_SIGN_OUT_URL,
+        responseType: 'code',
+      }
     }
   });
 
@@ -85,9 +87,12 @@
       `X-Amz-Algorithm=${algorithm}`,
       `X-Amz-Credential=${encodeURIComponent(credentials.accessKeyId + '/' + credentialScope)}`,
       `X-Amz-Date=${amzdate}`,
-      `X-Amz-SignedHeaders=host`,
-      `X-Amz-Security-Token=${encodeURIComponent(credentials.sessionToken)}`
+      `X-Amz-SignedHeaders=host`
     ];
+    if (credentials.sessionToken) {
+      queryParams.push(`X-Amz-Security-Token=${encodeURIComponent(credentials.sessionToken)}`);
+    }
+
     const canonicalQuerystring = queryParams.join('&');
     const canonicalHeaders = `host:${host}\n`;
     const signedHeaders = 'host';
@@ -159,11 +164,12 @@
 
     } catch (err) {
       log('Connection failed: ' + err.message);
+      console.error(err);
     }
   }
 
   document.getElementById('connectBtn').addEventListener('click', connectToIoT);
-
+});
 </script>
 
 </body>
