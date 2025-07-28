@@ -54,7 +54,7 @@ function initSpeciesPieChart() {
 
 // Preload historical booking trend
 function preloadBookingTrend() {
-  fetch("/get-booking-trend")
+  fetch(`${window.PETSTAY_CONFIG.API_BASE_URL}/get-booking-trend`)
     .then(res => res.json())
     .then(data => {
       if (!bookingTrendChart) return;
