@@ -167,6 +167,11 @@ if (!window.__PETSTAY_IOT_DASHBOARD_LOADED__) {
     try {
       const creds = await window.Amplify.Auth.currentCredentials();
       const signedUrl = signUrl(IOT_ENDPOINT, AWS_REGION, creds);
+      console.log("🔐 Signed URL for IoT connection:", signedUrl);
+      
+
+      console.log("🔐 Signed URL:\n", signedUrl);
+
 
       if (mqttClient) {
         mqttClient.end(true);
