@@ -63,7 +63,46 @@ function preloadBookingTrend() {
     .catch(err => console.error("Failed to preload booking trend:", err));
 }
 
-// AWS SigV4 helpers (sha256, hmac, signUrl) - use your existing code here
+function sha256(msg) {
+  return CryptoJS.SHA256(msg).toString(CryptoJS.enc.Hex);
+}
+function hmac(key, msg) {
+  return CryptoJS.HmacSHA256(CryptoJS.enc.Utf8.parse(msg), key);
+}
+function signUrl(endpoint, region, credentials) {
+  const now = new Date();
+  const amzdate = now.toISOString().replace(/[:-]|\.\d{3}/g, '');
+  const datestamp = amzdate.slice(0, 8);
+  const service = 'iotdevicegateway';
+  const algorithm = 'AWS4-HMAC-SHA256';
+  const method = 'GET';
+  const canonicalUri = '/mqtt';
+  const host = endpoint.replace(/^wss?:\/\//, '');
+  const credentialScope = `${datestamp}/${region}/${service}/aws4_request`;
+
+  const queryParams = [
+    `X-Amz-Algorithm=${algorithm}`,
+    `X-Amz-Credential=${encodeURIComponent(credentials.accessKeyId + '/' + credentialScope)}`,
+    `X-Amz-Date=${amzdate}`,
+    `X-Amz-SignedHeaders=host`,
+    `X-Amz-Security-Token=${encodeURIComponent(credentials.sessionToken)}`
+  ];
+  const canonicalQuerystring = queryParams.join('&');
+  const canonicalHeaders = `host:${host}\n`;
+  const signedHeaders = 'host';
+  const payloadHash = sha256('');
+  const canonicalRequest = [method, canonicalUri, canonicalQuerystring, canonicalHeaders, signedHeaders, payloadHash].join('\n');
+  const stringToSign = [algorithm, amzdate, credentialScope, sha256(canonicalRequest)].join('\n');
+
+  const kDate = hmac(CryptoJS.enc.Utf8.parse(`AWS4${credentials.secretAccessKey}`), datestamp);
+  const kRegion = hmac(kDate, region);
+  const kService = hmac(kRegion, service);
+  const kSigning = hmac(kService, 'aws4_request');
+
+  const signature = CryptoJS.HmacSHA256(stringToSign, kSigning).toString(CryptoJS.enc.Hex);
+  return `wss://${host}${canonicalUri}?${canonicalQuerystring}&X-Amz-Signature=${signature}`;
+}
+
 
 let mqttClient = null;
 let statsUpdateTimer = null;
