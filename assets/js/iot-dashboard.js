@@ -21,7 +21,6 @@ const speciesPieData = {
   }]
 };
 
-// Booking Trend Chart
 function initBookingTrendChart() {
   const ctxElement = document.getElementById("IoTBookingTrendChart");
   if (!ctxElement) return console.error("IoTBookingTrendChart canvas not found");
@@ -38,7 +37,6 @@ function initBookingTrendChart() {
   });
 }
 
-// Species Pie Chart
 function initSpeciesPieChart() {
   const ctx = document.getElementById("SpeciesPieChart");
   if (!ctx) return console.warn("SpeciesPieChart element not found");
@@ -52,7 +50,6 @@ function initSpeciesPieChart() {
   });
 }
 
-// Preload historical booking trend
 function preloadBookingTrend() {
   fetch(`${window.PETSTAY_CONFIG.API_BASE_URL}/get-booking-trend`)
     .then(res => res.json())
@@ -66,46 +63,7 @@ function preloadBookingTrend() {
     .catch(err => console.error("Failed to preload booking trend:", err));
 }
 
-// AWS SigV4 Signing Helpers
-function sha256(msg) {
-  return CryptoJS.SHA256(msg).toString(CryptoJS.enc.Hex);
-}
-function hmac(key, msg) {
-  return CryptoJS.HmacSHA256(CryptoJS.enc.Utf8.parse(msg), key);
-}
-function signUrl(endpoint, region, credentials) {
-  const now = new Date();
-  const amzdate = now.toISOString().replace(/[:-]|\.\d{3}/g, '');
-  const datestamp = amzdate.slice(0, 8);
-  const service = 'iotdevicegateway';
-  const algorithm = 'AWS4-HMAC-SHA256';
-  const method = 'GET';
-  const canonicalUri = '/mqtt';
-  const host = endpoint.replace(/^wss?:\/\//, '');
-  const credentialScope = `${datestamp}/${region}/${service}/aws4_request`;
-
-  const queryParams = [
-    `X-Amz-Algorithm=${algorithm}`,
-    `X-Amz-Credential=${encodeURIComponent(credentials.accessKeyId + '/' + credentialScope)}`,
-    `X-Amz-Date=${amzdate}`,
-    `X-Amz-SignedHeaders=host`,
-    `X-Amz-Security-Token=${encodeURIComponent(credentials.sessionToken)}`
-  ];
-  const canonicalQuerystring = queryParams.join('&');
-  const canonicalHeaders = `host:${host}\n`;
-  const signedHeaders = 'host';
-  const payloadHash = sha256('');
-  const canonicalRequest = [method, canonicalUri, canonicalQuerystring, canonicalHeaders, signedHeaders, payloadHash].join('\n');
-  const stringToSign = [algorithm, amzdate, credentialScope, sha256(canonicalRequest)].join('\n');
-
-  const kDate = hmac(CryptoJS.enc.Utf8.parse(`AWS4${credentials.secretAccessKey}`), datestamp);
-  const kRegion = hmac(kDate, region);
-  const kService = hmac(kRegion, service);
-  const kSigning = hmac(kService, 'aws4_request');
-
-  const signature = CryptoJS.HmacSHA256(stringToSign, kSigning).toString(CryptoJS.enc.Hex);
-  return `wss://${host}${canonicalUri}?${canonicalQuerystring}&X-Amz-Signature=${signature}`;
-}
+// AWS SigV4 helpers (sha256, hmac, signUrl) - use your existing code here
 
 let mqttClient = null;
 let statsUpdateTimer = null;
@@ -121,30 +79,69 @@ function queueStatsUpdate(data) {
   }, 2000);
 }
 
-mqttClient.on('connect', () => {
-  console.log('Connected to AWS IoT Core');
-  mqttClient.subscribe(IOT_TOPIC_DASHBOARD, err => {
-    if (err) {
-      console.error('Subscription error:', err.message);
-    } else {
-      console.log(`Subscribed to topic: ${IOT_TOPIC_DASHBOARD}`);
+async function connectToIoTDashboard() {
+  const { AWS_REGION, IOT_ENDPOINT, IOT_TOPIC_DASHBOARD, IOT_CLIENT_PREFIX } = window.PETSTAY_CONFIG;
 
-      // Update admin email display after connection
-      window.Amplify.Auth.currentSession()
-        .then(session => {
-          const email = session.getIdToken().decodePayload().email || "Unknown admin";
-          const emailEl = document.getElementById("adminEmail");
-          const dropdownEl = document.getElementById("adminEmailDropdown");
-          if (emailEl) emailEl.textContent = email;
-          if (dropdownEl) dropdownEl.textContent = email;
-        })
-        .catch(err => {
-          console.warn("Failed to get admin email after connect:", err);
-        });
+  try {
+    const creds = await window.Amplify.Auth.currentCredentials();
+    const signedUrl = signUrl(IOT_ENDPOINT, AWS_REGION, creds);
+
+    // Cleanly end previous MQTT connection if any
+    if (mqttClient) {
+      mqttClient.end(true);
+      mqttClient = null;
     }
-  });
-});
 
+    mqttClient = mqtt.connect(signedUrl, {
+      clientId: `${IOT_CLIENT_PREFIX}${Math.floor(Math.random() * 100000)}`,
+      keepalive: 60,
+      clean: true,
+      reconnectPeriod: 10000,
+    });
+
+    mqttClient.on('connect', () => {
+      console.log('Connected to AWS IoT Core');
+
+      mqttClient.subscribe(IOT_TOPIC_DASHBOARD, err => {
+        if (err) {
+          console.error('Subscription error:', err.message);
+          return;
+        }
+        console.log(`Subscribed to topic: ${IOT_TOPIC_DASHBOARD}`);
+
+        // Update admin email on successful subscription
+        window.Amplify.Auth.currentSession()
+          .then(session => {
+            const email = session.getIdToken().decodePayload().email || "Unknown admin";
+            const emailEl = document.getElementById("adminEmail");
+            const dropdownEl = document.getElementById("adminEmailDropdown");
+            if (emailEl) emailEl.textContent = email;
+            if (dropdownEl) dropdownEl.textContent = email;
+          })
+          .catch(err => {
+            console.warn("Failed to get admin email after connect:", err);
+          });
+      });
+    });
+
+    mqttClient.on('message', (topic, payload) => {
+      try {
+        const data = JSON.parse(payload.toString());
+        console.log('IoT message received:', data);
+        queueStatsUpdate(data);
+      } catch (err) {
+        console.error('Failed to parse IoT message:', err);
+      }
+    });
+
+    mqttClient.on('error', err => {
+      console.error('MQTT error:', err.message || err);
+    });
+
+  } catch (err) {
+    console.error('Failed to authenticate or connect:', err);
+  }
+}
 
 let lastStats = {
   currentGuests: null,
@@ -209,11 +206,21 @@ function updateDashboardStats(data) {
   }
 }
 
-// // 🔧 FIX: Patch for Amplify v4 CDN — sets window.Amplify
-// const Amplify = window.aws_amplify?.default;
-// if (Amplify) {
-//   window.Amplify = Amplify;
-// }
+// Sign out function to cleanly disconnect MQTT and sign out user
+function signOutUser() {
+  if (mqttClient) {
+    mqttClient.end(true);
+    mqttClient = null;
+  }
+  window.Amplify.Auth.signOut({ global: true })
+    .then(() => {
+      window.location.href = window.PETSTAY_CONFIG.REDIRECT_SIGN_OUT_URL || '/index.html';
+    })
+    .catch(err => {
+      console.error("Sign out failed:", err);
+      window.location.href = window.PETSTAY_CONFIG.REDIRECT_SIGN_OUT_URL || '/index.html';
+    });
+}
 
 document.addEventListener("DOMContentLoaded", async () => {
   initBookingTrendChart();
@@ -230,5 +237,11 @@ document.addEventListener("DOMContentLoaded", async () => {
       const el = document.getElementById(id);
       if (el) el.textContent = "Auth failed";
     });
+  }
+
+  // Attach sign-out button listener
+  const signOutBtn = document.getElementById("signOutBtn");
+  if (signOutBtn) {
+    signOutBtn.addEventListener("click", signOutUser);
   }
 });
