@@ -225,10 +225,16 @@ function updateDashboardStats(data) {
   }
 }
 
+// 🔧 FIX: Patch for Amplify v4 CDN — sets window.Amplify
+const Amplify = window.aws_amplify?.default;
+if (Amplify) {
+  window.Amplify = Amplify;
+}
+
 document.addEventListener("DOMContentLoaded", async () => {
   initBookingTrendChart();
   initSpeciesPieChart();
-  preloadBookingTrend(); 
+  preloadBookingTrend();
 
   try {
     await window.Amplify.Auth.currentAuthenticatedUser();
