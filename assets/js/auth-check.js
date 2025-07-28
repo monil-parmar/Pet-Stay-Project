@@ -1,5 +1,4 @@
-if (!window.__PETSTAY_AUTH_CHECK_LOADED__) {
-  window.__PETSTAY_AUTH_CHECK_LOADED__ = true;
+
 
   console.log("auth-check.js loaded");
 
@@ -203,7 +202,6 @@ if (!window.__PETSTAY_AUTH_CHECK_LOADED__) {
       }, 500);
     });
   }
-}
 
 // The dynamic loader function — **outside** the guard
 function loadDashboardAndAuth() {
