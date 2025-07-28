@@ -1,5 +1,8 @@
 // File: assets/js/auth-check.js
 
+if (!window.__PETSTAY_AUTH_CHECK_LOADED__) {
+  window.__PETSTAY_AUTH_CHECK_LOADED__ = true;
+
 console.log("auth-check.js loaded");
 
 // Load Amplify core modules from the global AWS Amplify script (if available)
@@ -257,5 +260,4 @@ function loadDashboardAndAuth() {
   dashboardScript.onerror = () => console.error('Failed to load iot-dashboard.js');
   document.body.appendChild(dashboardScript);
 }
-
-
+}

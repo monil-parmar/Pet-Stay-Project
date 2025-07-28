@@ -1,6 +1,4 @@
-if (window.__PETSTAY_IOT_DASHBOARD_LOADED__) {
-  console.warn("iot-dashboard.js already loaded, skipping...");
-} else {
+if (!window.__PETSTAY_IOT_DASHBOARD_LOADED__) {
   window.__PETSTAY_IOT_DASHBOARD_LOADED__ = true;
 
   let bookingTrendChart = null;
@@ -284,5 +282,9 @@ if (window.__PETSTAY_IOT_DASHBOARD_LOADED__) {
       signOutBtn.addEventListener("click", signOutUser);
     }
   });
+
+  // Expose globally for your dynamic loader or auth-check to call
+  window.connectToIoTDashboard = connectToIoTDashboard;
+  window.signOutUser = signOutUser;
 
 } // end guard check
