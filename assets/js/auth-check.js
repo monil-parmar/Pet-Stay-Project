@@ -259,36 +259,3 @@ function loadDashboardAndAuth() {
 }
 
 
-  function waitForAmplify(attempts = 0) {
-    const cfg = window.PETSTAY_CONFIG;
-    const Amplify = window.aws_amplify?.default;
-
-    if (Amplify?.configure && Amplify?.Auth && cfg) {
-      window.Amplify = Amplify; // Assign to global so rest of code works
-      Amplify.configure({
-        Auth: {
-          region: cfg.AWS_REGION,
-          userPoolId: cfg.COGNITO_USER_POOL_ID,
-          userPoolWebClientId: cfg.COGNITO_USER_POOL_CLIENT_ID,
-          identityPoolId: cfg.IDENTITY_POOL_ID,
-          mandatorySignIn: true,
-          oauth: {
-            domain: cfg.COGNITO_DOMAIN,
-            scope: ['email', 'openid', 'profile'],
-            redirectSignIn: cfg.REDIRECT_SIGN_IN_URL,
-            redirectSignOut: cfg.REDIRECT_SIGN_OUT_URL,
-            responseType: 'code'
-          }
-        }
-      });
-      console.log("AWS Amplify v4 configured");
-      loadDashboardAndAuth();
-    } else if (attempts < 10) {
-      console.warn(`Waiting for Amplify... (attempt ${attempts + 1})`);
-      setTimeout(() => waitForAmplify(attempts + 1), 300);
-    } else {
-      console.error("AWS Amplify failed to load after retries");
-    }
-  }
-
-  window.addEventListener("load", () => waitForAmplify());
