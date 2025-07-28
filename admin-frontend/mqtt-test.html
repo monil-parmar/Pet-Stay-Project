@@ -152,6 +152,7 @@ document.addEventListener('DOMContentLoaded', () => {
         keepalive: 60,
         clean: true,
         reconnectPeriod: 5000,
+        protocol: 'wss',
       });
 
       mqttClient.on('connect', () => {
