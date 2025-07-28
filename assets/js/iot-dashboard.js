@@ -137,6 +137,13 @@ async function connectToIoTDashboard() {
 }
 
 // Update DOM and charts from IoT payload
+let lastStats = {
+  currentGuests: null,
+  availableRooms: null,
+  petSpecies: {},
+  bookingTrendPoint: null
+};
+
 function updateDashboardStats(data) {
   const now = new Date().toLocaleTimeString();
   const setText = (id, value) => {
@@ -144,32 +151,23 @@ function updateDashboardStats(data) {
     if (el) el.textContent = value;
   };
 
-  if (data.metric === "currentGuests") {
-    setText("statCurrentGuests", data.value);
-  } else if (data.metric === "availableRooms") {
-    setText("statAvailableRooms", data.value);
-  } else if (data.metric === "speciesStats") {
-    const speciesStr = typeof data.value === 'object'
-      ? Object.entries(data.value).map(([k, v]) => `${k}: ${v}`).join(' | ')
-      : data.value;
-    setText("statSpeciesStats", speciesStr);
-  } else if (data.metric === "bookingTrends") {
-    const latest = data.value[data.value.length - 1];
-    setText("statBookingTrends", latest);
-    if (bookingTrendChart) {
-      bookingTrendChart.data.labels.push(now);
-      bookingTrendChart.data.datasets[0].data.push(latest);
-      if (bookingTrendChart.data.labels.length > 20) {
-        bookingTrendChart.data.labels.shift();
-        bookingTrendChart.data.datasets[0].data.shift();
-      }
-      bookingTrendChart.update();
-    }
-  } else if (data.metric === "bookingUpdate") {
+  if (data.metric === "bookingUpdate") {
     const val = data.value;
-    if (val.currentGuests !== undefined) setText("statCurrentGuests", val.currentGuests);
-    if (val.availableRooms !== undefined) setText("statAvailableRooms", val.availableRooms);
-    if (val.petSpecies !== undefined && typeof val.petSpecies === 'object') {
+    const changes = {};
+
+    if (val.currentGuests !== undefined && val.currentGuests !== lastStats.currentGuests) {
+      setText("statCurrentGuests", val.currentGuests);
+      lastStats.currentGuests = val.currentGuests;
+      changes.currentGuests = true;
+    }
+
+    if (val.availableRooms !== undefined && val.availableRooms !== lastStats.availableRooms) {
+      setText("statAvailableRooms", val.availableRooms);
+      lastStats.availableRooms = val.availableRooms;
+      changes.availableRooms = true;
+    }
+
+    if (val.petSpecies && JSON.stringify(val.petSpecies) !== JSON.stringify(lastStats.petSpecies)) {
       const stat = Object.entries(val.petSpecies).map(([k, v]) => `${k}: ${v}`).join(' | ');
       setText("statSpeciesStats", stat);
       if (speciesPieChart) {
@@ -177,19 +175,31 @@ function updateDashboardStats(data) {
         speciesPieChart.data.datasets[0].data = Object.values(val.petSpecies);
         speciesPieChart.update();
       }
+      lastStats.petSpecies = { ...val.petSpecies };
+      changes.petSpecies = true;
     }
-    if (val.bookingTrendPoint !== undefined && bookingTrendChart) {
+
+    if (val.bookingTrendPoint !== undefined && val.bookingTrendPoint !== lastStats.bookingTrendPoint) {
       setText("statBookingTrends", val.bookingTrendPoint);
-      bookingTrendChart.data.labels.push(now);
-      bookingTrendChart.data.datasets[0].data.push(val.bookingTrendPoint);
-      if (bookingTrendChart.data.labels.length > 20) {
-        bookingTrendChart.data.labels.shift();
-        bookingTrendChart.data.datasets[0].data.shift();
+      if (bookingTrendChart) {
+        bookingTrendChart.data.labels.push(now);
+        bookingTrendChart.data.datasets[0].data.push(val.bookingTrendPoint);
+        if (bookingTrendChart.data.labels.length > 20) {
+          bookingTrendChart.data.labels.shift();
+          bookingTrendChart.data.datasets[0].data.shift();
+        }
+        bookingTrendChart.update();
       }
-      bookingTrendChart.update();
+      lastStats.bookingTrendPoint = val.bookingTrendPoint;
+      changes.bookingTrendPoint = true;
+    }
+
+    if (Object.keys(changes).length === 0) {
+      console.log("Duplicate update ignored");
     }
   }
 }
+
 
 // Start logic on DOM load
 document.addEventListener("DOMContentLoaded", async () => {
