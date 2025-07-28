@@ -11,7 +11,14 @@
 
   <style>
     body { font-family: Arial, sans-serif; padding: 1rem; }
-    #log { white-space: pre-wrap; background: #f7f7f7; border: 1px solid #ccc; padding: 1rem; height: 200px; overflow-y: auto; }
+    #log {
+      white-space: pre-wrap;
+      background: #f7f7f7;
+      border: 1px solid #ccc;
+      padding: 1rem;
+      height: 200px;
+      overflow-y: auto;
+    }
   </style>
 </head>
 <body>
@@ -22,7 +29,7 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-  // ✅ Must come before any usage of PETSTAY_CONFIG
+  // Configuration
   window.PETSTAY_CONFIG = {
     AWS_REGION: 'us-east-1',
     COGNITO_USER_POOL_ID: 'us-east-1_QIxGKKFzG',
@@ -43,15 +50,16 @@ document.addEventListener('DOMContentLoaded', () => {
     logEl.scrollTop = logEl.scrollHeight;
   }
 
-  // ✅ Fix: Ensure Amplify is defined before configure
+  // Load Amplify safely
   window.Amplify = window.aws_amplify?.Amplify;
   window.Auth = window.aws_amplify?.Auth;
 
   if (!window.Amplify || !window.Auth) {
     log("❌ AWS Amplify or Auth not available. Check script loading.");
-    return; // ✅ legal now — inside function
+    return;
   }
 
+  // Configure Amplify
   window.Amplify.configure({
     Auth: {
       region: window.PETSTAY_CONFIG.AWS_REGION,
@@ -69,6 +77,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  // Crypto helpers
   function sha256(msg) {
     return CryptoJS.SHA256(msg).toString(CryptoJS.enc.Hex);
   }
@@ -168,7 +177,6 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('connectBtn').addEventListener('click', connectToIoT);
 });
 </script>
-
 
 </body>
 </html>
