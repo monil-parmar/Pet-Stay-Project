@@ -21,6 +21,7 @@
 <div id="log">Logs will appear here...</div>
 
 <script>
+document.addEventListener('DOMContentLoaded', () => {
   // ✅ Must come before any usage of PETSTAY_CONFIG
   window.PETSTAY_CONFIG = {
     AWS_REGION: 'us-east-1',
@@ -48,7 +49,7 @@
 
   if (!window.Amplify || !window.Auth) {
     log("❌ AWS Amplify or Auth not available. Check script loading.");
-    return;
+    return; // ✅ legal now — inside function
   }
 
   window.Amplify.configure({
@@ -158,7 +159,6 @@
 
       mqttClient.on('error', (err) => log('MQTT error: ' + err.message));
       mqttClient.on('close', () => log('MQTT connection closed'));
-
     } catch (err) {
       log('❌ Connection failed: ' + err.message);
       console.error(err);
@@ -166,7 +166,9 @@
   }
 
   document.getElementById('connectBtn').addEventListener('click', connectToIoT);
+});
 </script>
+
 
 </body>
 </html>
