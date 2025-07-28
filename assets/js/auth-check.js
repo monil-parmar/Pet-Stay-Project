@@ -1,294 +1,212 @@
-// File: assets/js/auth-check.js
+if (!window.__PETSTAY_AUTH_CHECK_LOADED__) {
+  window.__PETSTAY_AUTH_CHECK_LOADED__ = true;
 
-console.log("auth-check.js loaded");
+  console.log("auth-check.js loaded");
 
-// Load Amplify core modules from the global AWS Amplify script (if available)
-const Amplify = window.aws_amplify?.Amplify || window.Amplify;
-const Auth = window.aws_amplify?.Auth || window.Amplify?.Auth;
-const Hub = window.aws_amplify?.Hub || window.Amplify?.Hub;
+  // Use let to avoid redeclaration if script loaded multiple times
+  let Amplify = window.aws_amplify?.Amplify || window.Amplify;
+  let Auth = window.aws_amplify?.Auth || window.Amplify?.Auth;
+  let Hub = window.aws_amplify?.Hub || window.Amplify?.Hub;
 
-// Save current page URL (origin + path) for potential redirects
-const currentUrl = window.location.origin + window.location.pathname;
+  // Save current page URL (origin + path) for potential redirects
+  const currentUrl = window.location.origin + window.location.pathname;
 
-// Define Amplify Auth configuration using placeholders
-const amplifyAuthConfig = {
-  region: 'us-east-1', // Example: 'us-east-1'
-  userPoolId: 'us-east-1_QIxGKKFzG', //write your Cognito User Pool ID here
-  userPoolWebClientId: '7pk31b8a5ak2b7aj42qimaibhc', //write your Cognito User Pool Client ID here
-  oauth: {
-    domain: 'us-east-1qixgkkfzg.auth.us-east-1.amazoncognito.com', //write your Cognito Domain here
-    scope: ['email', 'openid', 'phone'], // OAuth scopes
-    redirectSignIn: 'https://main.d3esln33qx1ws1.amplifyapp.com/admin-frontend/post-login.html', //write your Redirect Sign In URL here
-    redirectSignOut: 'https://main.d3esln33qx1ws1.amplifyapp.com/index.html', //write your Redirect Sign Out URL here
-    responseType: 'code', // OAuth flow to use (code for authorization code grant)
-  }
-};
-
-// Safety checks make sure Amplify, Auth, and Hub are available
-if (!Amplify || typeof Amplify.configure !== 'function') {
-  console.error("Amplify not available or misconfigured.");
-} else if (!Auth || !Hub) {
-  console.error("Amplify.Auth or Amplify.Hub is missing. Cannot proceed.");
-} else {
-  // Initialize Amplify with the config above
-  Amplify.configure({ Auth: amplifyAuthConfig });
-
-  // Attempt to get the current user session immediately
-  Auth.currentSession()
-    .then(session => {
-      console.log("Session exists:", session);
-      checkUser(); // If session exists, check user details
-    })
-    .catch(err => {
-      console.warn("No active session yet:", err.message);
-    });
-
-  /**
-   * Main function: check if user is authenticated,
-   * get their email, and update the UI.
-   */
-  async function checkUser(retry = false) {
-    const urlParams = new URLSearchParams(window.location.search);
-
-    try {
-      // Try to get the authenticated user
-      const user = await Auth.currentAuthenticatedUser({ bypassCache: true });
-      console.log("Raw user object:", user);
-
-      // Get current session and decode ID token to extract email
-      const session = await Auth.currentSession();
-      const idTokenPayload = session.getIdToken().decodePayload();
-      const email = idTokenPayload?.email || user.getUsername() || "Email not available";
-
-      console.log("Email from ID token payload:", email);
-
-      // Make email globally available to other scripts on the page
-      window.petstayCurrentEmail = email;
-
-      // Update the admin email display in the DOM
-      updateAdminEmail(email);
-
-      // If we came back from Cognito, clean up query params
-      if (urlParams.get("from") === "cognito") {
-        const cleanUrl = window.location.origin + window.location.pathname;
-        window.history.replaceState({}, document.title, cleanUrl);
-      }
-    } catch (err) {
-      console.warn("Could not fetch authenticated user:", err.name, err.message);
-
-      // If not retried yet, try again after 1 second (useful for slow auth)
-      if (!retry) {
-        console.warn("Retrying user check after 1s...");
-        return setTimeout(() => checkUser(true), 1000);
-      }
-
-      // If still no session, update UI as not signed in
-      updateAdminEmail("Not signed in");
-
-      const justCameFromIndex = urlParams.get("from") === "index";
-      const cameFromCognito = urlParams.get("from") === "cognito";
-
-      // Avoid infinite redirect loops
-      if (justCameFromIndex || cameFromCognito) {
-        console.warn("Avoiding redirect loop after login");
-        return;
-      }
-
-      // Build Cognito Hosted UI login URL and redirect to login
-      const { domain, redirectSignIn } = amplifyAuthConfig.oauth;
-      const clientId = amplifyAuthConfig.userPoolWebClientId;
-
-      // Hosted UI authorization URL
-      const loginUrl = new URL(`https://${domain}/oauth2/authorize`);
-      loginUrl.searchParams.set('client_id', clientId);
-      loginUrl.searchParams.set('response_type', 'code');
-      loginUrl.searchParams.set('scope', 'email openid phone');
-      loginUrl.searchParams.set('redirect_uri', redirectSignIn);
-
-      console.log("Redirecting to login page...");
-      window.location.replace(loginUrl.toString());
+  // Define Amplify Auth configuration using placeholders
+  const amplifyAuthConfig = {
+    region: 'us-east-1', // Example: 'us-east-1'
+    userPoolId: 'us-east-1_QIxGKKFzG', //write your Cognito User Pool ID here
+    userPoolWebClientId: '7pk31b8a5ak2b7aj42qimaibhc', //write your Cognito User Pool Client ID here
+    oauth: {
+      domain: 'us-east-1qixgkkfzg.auth.us-east-1.amazoncognito.com', //write your Cognito Domain here
+      scope: ['email', 'openid', 'phone'], // OAuth scopes
+      redirectSignIn: 'https://main.d3esln33qx1ws1.amplifyapp.com/admin-frontend/post-login.html', //write your Redirect Sign In URL here
+      redirectSignOut: 'https://main.d3esln33qx1ws1.amplifyapp.com/index.html', //write your Redirect Sign Out URL here
+      responseType: 'code', // OAuth flow to use (code for authorization code grant)
     }
-  }
-
-  /**
-   * Update the admin email in the header or dropdown elements.
-   * If not signed in, display fallback text.
-   */
-  function updateAdminEmail(email) {
-    console.log("updateAdminEmail called with:", email);
-    const fallback = email || "Not signed in";
-
-    const emailEl = document.getElementById('adminEmail');
-    if (emailEl) {
-      emailEl.innerHTML = fallback;
-      console.log("Email set in #adminEmail:", fallback);
-    } else {
-      console.warn("Element #adminEmail not found in DOM");
     }
+  };
 
-    const dropdownEl = document.getElementById('adminEmailDropdown');
-    if (dropdownEl) {
-      dropdownEl.textContent = fallback;
-      console.log("Email set in #adminEmailDropdown:", fallback);
-    } else {
-      console.warn("Element #adminEmailDropdown not found in DOM");
-    }
-  }
+  // Safety checks make sure Amplify, Auth, and Hub are available
+  if (!Amplify || typeof Amplify.configure !== 'function') {
+    console.error("Amplify not available or misconfigured.");
+  } else if (!Auth || !Hub) {
+    console.error("Amplify.Auth or Amplify.Hub is missing. Cannot proceed.");
+  } else {
+    // Initialize Amplify with the config above
+    Amplify.configure({ Auth: amplifyAuthConfig });
 
-  /**
-   * Listen for Amplify Auth events.
-   * If user signs in, re-check user and show tokens in console for debugging.
-   */
-  Hub.listen('auth', async (data) => {
-    const { payload } = data;
-    if (payload.event === 'signIn') {
-      console.log("Auth event: signIn");
-      checkUser(true); // Re-check user details
-
-      // Also log token payloads for debugging
-      try {
-        const session = await Auth.currentSession();
-        console.log("ID Token Payload (Hub):", session.getIdToken().decodePayload());
-        console.log("Access Token Payload (Hub):", session.getAccessToken().decodePayload());
-      } catch (err) {
-        console.warn("Failed to fetch token payload inside Hub listener:", err);
-      }
-    }
-  });
-
-  /**
-   * Global sign-out function: signs out the user and redirects to Cognito logout.
-   */
-  window.signOutUser = function () {
-    console.log("Sign out triggered");
-
+    // Attempt to get the current user session immediately
     Auth.currentSession()
       .then(session => {
-        console.log("Session found");
-        const idToken = session.getIdToken().getJwtToken();
-        return Auth.signOut({ global: true }).then(() => idToken);
-      })
-      .then(idToken => {
-        const { domain, redirectSignOut } = amplifyAuthConfig.oauth;
-        const clientId = amplifyAuthConfig.userPoolWebClientId;
-
-        const logoutUrl = new URL(`https://${domain}/logout`);
-        logoutUrl.searchParams.append('client_id', clientId);
-        logoutUrl.searchParams.append('logout_uri', redirectSignOut);
-        logoutUrl.searchParams.append('id_token_hint', idToken);
-
-        console.log("Redirecting to:", logoutUrl.toString());
-        window.location.replace(logoutUrl.toString());
+        console.log("Session exists:", session);
+        checkUser(); // If session exists, check user details
       })
       .catch(err => {
-        console.error("Sign out failed:", err);
-        window.location.replace(amplifyAuthConfig.oauth.redirectSignOut);
+        console.warn("No active session yet:", err.message);
       });
-  };
 
-  /**
-   * When the page loads, attach the sign-out button event listener if found.
-   */
-  document.addEventListener('DOMContentLoaded', () => {
-    setTimeout(() => {
-      checkUser(); // Initial check
+    /**
+     * Main function: check if user is authenticated,
+     * get their email, and update the UI.
+     */
+    async function checkUser(retry = false) {
+      const urlParams = new URLSearchParams(window.location.search);
 
-      const retryAttachSignOut = () => {
-        const signOutEl = document.getElementById("signOutBtn");
-        if (signOutEl) {
-          console.log("Sign out button found, attaching handler");
-          signOutEl.addEventListener("click", window.signOutUser);
-        } else {
-          console.warn("Sign out button NOT found, retrying...");
-          setTimeout(retryAttachSignOut, 300);
+      try {
+        // Try to get the authenticated user
+        const user = await Auth.currentAuthenticatedUser({ bypassCache: true });
+        console.log("Raw user object:", user);
+
+        // Get current session and decode ID token to extract email
+        const session = await Auth.currentSession();
+        const idTokenPayload = session.getIdToken().decodePayload();
+        const email = idTokenPayload?.email || user.getUsername() || "Email not available";
+
+        console.log("Email from ID token payload:", email);
+
+        // Make email globally available to other scripts on the page
+        window.petstayCurrentEmail = email;
+
+        // Update the admin email display in the DOM
+        updateAdminEmail(email);
+
+        // If we came back from Cognito, clean up query params
+        if (urlParams.get("from") === "cognito") {
+          const cleanUrl = window.location.origin + window.location.pathname;
+          window.history.replaceState({}, document.title, cleanUrl);
         }
-      };
+      } catch (err) {
+        console.warn("Could not fetch authenticated user:", err.name, err.message);
 
-      retryAttachSignOut();
-    }, 500);
-  });
-}
-function loadDashboardAndAuth() {
-  const dashboardScript = document.createElement('script');
-  dashboardScript.src = '/assets/js/iot-dashboard.js';
-  dashboardScript.onload = () => {
-    if (!window.__PETSTAY_AUTH_CHECK_LOADED__) {
-      const authScript = document.createElement('script');
-      authScript.src = '/assets/js/auth-check.js';
-      authScript.onload = () => {
-        window.__PETSTAY_AUTH_CHECK_LOADED__ = true;
+        // If not retried yet, try again after 1 second (useful for slow auth)
+        if (!retry) {
+          console.warn("Retrying user check after 1s...");
+          return setTimeout(() => checkUser(true), 1000);
+        }
 
-        const Auth = window.Amplify?.Auth;
-        if (!Auth) return;
+        // If still no session, update UI as not signed in
+        updateAdminEmail("Not signed in");
 
-        Auth.currentAuthenticatedUser()
-          .then(() => {
-            console.log("User is authenticated — initializing IoT...");
-            if (typeof connectToIoTDashboard === 'function') {
-              connectToIoTDashboard();
-            }
+        const justCameFromIndex = urlParams.get("from") === "index";
+        const cameFromCognito = urlParams.get("from") === "cognito";
 
-            // Update UI with email
-            if (typeof checkUser === 'function') {
-              checkUser(true); // true = only show email, don't redirect
-            } else {
-              console.warn("checkUser() not defined after auth-check.js load.");
-            }
-          })
-          .catch(err => console.warn("User not signed in:", err.message));
-      };
-      authScript.onerror = () => console.error('Failed to load auth-check.js');
-      document.body.appendChild(authScript);
-    } else {
-      console.log("auth-check.js already loaded — skipping");
+        // Avoid infinite redirect loops
+        if (justCameFromIndex || cameFromCognito) {
+          console.warn("Avoiding redirect loop after login");
+          return;
+        }
 
-      const Auth = window.Amplify?.Auth;
-      if (Auth) {
-        Auth.currentAuthenticatedUser()
-          .then(() => {
-            if (typeof checkUser === 'function') {
-              checkUser(true);
-            }
-          })
-          .catch(() => {});
+        // Build Cognito Hosted UI login URL and redirect to login
+        const { domain, redirectSignIn } = amplifyAuthConfig.oauth;
+        const clientId = amplifyAuthConfig.userPoolWebClientId;
+
+        // Hosted UI authorization URL
+        const loginUrl = new URL(`https://${domain}/oauth2/authorize`);
+        loginUrl.searchParams.set('client_id', clientId);
+        loginUrl.searchParams.set('response_type', 'code');
+        loginUrl.searchParams.set('scope', 'email openid phone');
+        loginUrl.searchParams.set('redirect_uri', redirectSignIn);
+
+        console.log("Redirecting to login page...");
+        window.location.replace(loginUrl.toString());
       }
     }
-  };
-  dashboardScript.onerror = () => console.error('Failed to load iot-dashboard.js');
-  document.body.appendChild(dashboardScript);
-}
 
+    /**
+     * Update the admin email in the header or dropdown elements.
+     * If not signed in, display fallback text.
+     */
+    function updateAdminEmail(email) {
+      console.log("updateAdminEmail called with:", email);
+      const fallback = email || "Not signed in";
 
-  function waitForAmplify(attempts = 0) {
-    const cfg = window.PETSTAY_CONFIG;
-    const Amplify = window.aws_amplify?.default;
+      const emailEl = document.getElementById('adminEmail');
+      if (emailEl) {
+        emailEl.innerHTML = fallback;
+        console.log("Email set in #adminEmail:", fallback);
+      } else {
+        console.warn("Element #adminEmail not found in DOM");
+      }
 
-    if (Amplify?.configure && Amplify?.Auth && cfg) {
-      window.Amplify = Amplify; // Assign to global so rest of code works
-      Amplify.configure({
-        Auth: {
-          region: cfg.AWS_REGION,
-          userPoolId: cfg.COGNITO_USER_POOL_ID,
-          userPoolWebClientId: cfg.COGNITO_USER_POOL_CLIENT_ID,
-          identityPoolId: cfg.IDENTITY_POOL_ID,
-          mandatorySignIn: true,
-          oauth: {
-            domain: cfg.COGNITO_DOMAIN,
-            scope: ['email', 'openid', 'profile'],
-            redirectSignIn: cfg.REDIRECT_SIGN_IN_URL,
-            redirectSignOut: cfg.REDIRECT_SIGN_OUT_URL,
-            responseType: 'code'
-          }
-        }
-      });
-      console.log("AWS Amplify v4 configured");
-      loadDashboardAndAuth();
-    } else if (attempts < 10) {
-      console.warn(`Waiting for Amplify... (attempt ${attempts + 1})`);
-      setTimeout(() => waitForAmplify(attempts + 1), 300);
-    } else {
-      console.error("AWS Amplify failed to load after retries");
+      const dropdownEl = document.getElementById('adminEmailDropdown');
+      if (dropdownEl) {
+        dropdownEl.textContent = fallback;
+        console.log("Email set in #adminEmailDropdown:", fallback);
+      } else {
+        console.warn("Element #adminEmailDropdown not found in DOM");
+      }
     }
-  }
 
-  window.addEventListener("load", () => waitForAmplify());
+    /**
+     * Listen for Amplify Auth events.
+     * If user signs in, re-check user and show tokens in console for debugging.
+     */
+    Hub.listen('auth', async (data) => {
+      const { payload } = data;
+      if (payload.event === 'signIn') {
+        console.log("Auth event: signIn");
+        checkUser(true); // Re-check user details
+
+        // Also log token payloads for debugging
+        try {
+          const session = await Auth.currentSession();
+          console.log("ID Token Payload (Hub):", session.getIdToken().decodePayload());
+          console.log("Access Token Payload (Hub):", session.getAccessToken().decodePayload());
+        } catch (err) {
+          console.warn("Failed to fetch token payload inside Hub listener:", err);
+        }
+      }
+    });
+
+    /**
+     * Global sign-out function: signs out the user and redirects to Cognito logout.
+     */
+    window.signOutUser = function () {
+      console.log("Sign out triggered");
+
+      Auth.currentSession()
+        .then(session => {
+          console.log("Session found");
+          const idToken = session.getIdToken().getJwtToken();
+          return Auth.signOut({ global: true }).then(() => idToken);
+        })
+        .then(idToken => {
+          const { domain, redirectSignOut } = amplifyAuthConfig.oauth;
+          const clientId = amplifyAuthConfig.userPoolWebClientId;
+
+          const logoutUrl = new URL(`https://${domain}/logout`);
+          logoutUrl.searchParams.append('client_id', clientId);
+          logoutUrl.searchParams.append('logout_uri', redirectSignOut);
+          logoutUrl.searchParams.append('id_token_hint', idToken);
+
+          console.log("Redirecting to:", logoutUrl.toString());
+          window.location.replace(logoutUrl.toString());
+        })
+        .catch(err => {
+          console.error("Sign out failed:", err);
+          window.location.replace(amplifyAuthConfig.oauth.redirectSignOut);
+        });
+    };
+
+    /**
+     * When the page loads, attach the sign-out button event listener if found.
+     */
+    document.addEventListener('DOMContentLoaded', () => {
+      setTimeout(() => {
+        checkUser(); // Initial check
+
+        const retryAttachSignOut = () => {
+          const signOutEl = document.getElementById("signOutBtn");
+          if (signOutEl) {
+            console.log("Sign out button found, attaching handler");
+            signOutEl.addEventListener("click", window.signOutUser);
+          } else {
+            console.warn("Sign out button NOT found, retrying...");
+            setTimeout(retryAttachSignOut, 300);
+          }
+        };
+
+        retryAttachSignOut();
+      }, 500);
+    });
+}
