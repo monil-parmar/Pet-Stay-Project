@@ -54,7 +54,7 @@ function initSpeciesPieChart() {
 
 // Preload historical booking trend
 function preloadBookingTrend() {
-  fetch("/api/get-booking-trend")
+  fetch("/get-booking-trend")
     .then(res => res.json())
     .then(data => {
       if (!bookingTrendChart) return;
