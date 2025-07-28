@@ -82,68 +82,69 @@ if (!window.__PETSTAY_IOT_DASHBOARD_LOADED__) {
   function hmac(key, msg) {
     return CryptoJS.HmacSHA256(CryptoJS.enc.Utf8.parse(msg), key);
   }
-function signUrl(endpoint, region, credentials) {
-  const now = new Date();
-  const amzdate = now.toISOString().replace(/[:-]|\.\d{3}/g, '');
-  const datestamp = amzdate.slice(0, 8);
-  const service = 'iotdevicegateway';
-  const algorithm = 'AWS4-HMAC-SHA256';
-  const method = 'GET';
-  const canonicalUri = '/mqtt';
-  const host = endpoint.replace(/^wss?:\/\//, '');
-  const credentialScope = `${datestamp}/${region}/${service}/aws4_request`;
+  function signUrl(endpoint, region, credentials) {
+    const now = new Date();
+    const iso = now.toISOString(); // e.g. "2025-07-28T06:08:40.185Z"
+    const amzdate = iso.replace(/[:-]|\.\d{3}/g, ''); // becomes "20250728T060840Z"
+    const datestamp = amzdate.slice(0, 8); // "20250728"
+    const service = 'iotdevicegateway';
+    const algorithm = 'AWS4-HMAC-SHA256';
+    const method = 'GET';
+    const canonicalUri = '/mqtt';
+    const host = endpoint.replace(/^wss?:\/\//, '');
+    const credentialScope = `${datestamp}/${region}/${service}/aws4_request`;
 
-  // Build query params object
-  const queryParamsObj = {
-    'X-Amz-Algorithm': algorithm,
-    'X-Amz-Credential': `${credentials.accessKeyId}/${credentialScope}`,
-    'X-Amz-Date': amzdate,
-    'X-Amz-SignedHeaders': 'host',
-    'X-Amz-Security-Token': credentials.sessionToken
-  };
+    // Build query params object
+    const queryParamsObj = {
+      'X-Amz-Algorithm': algorithm,
+      'X-Amz-Credential': `${credentials.accessKeyId}/${credentialScope}`,
+      'X-Amz-Date': amzdate,
+      'X-Amz-SignedHeaders': 'host',
+      'X-Amz-Security-Token': credentials.sessionToken
+    };
 
-  // Sort query param keys lexicographically
-  const sortedQueryKeys = Object.keys(queryParamsObj).sort();
+    // Sort query param keys lexicographically
+    const sortedQueryKeys = Object.keys(queryParamsObj).sort();
 
-  // Encode and join sorted query params
-  const canonicalQuerystring = sortedQueryKeys
-    .map(key => `${encodeURIComponent(key)}=${encodeURIComponent(queryParamsObj[key])}`)
-    .join('&');
+    // Encode and join sorted query params
+    const canonicalQuerystring = sortedQueryKeys
+      .map(key => `${encodeURIComponent(key)}=${encodeURIComponent(queryParamsObj[key])}`)
+      .join('&');
 
-  const canonicalHeaders = `host:${host}\n`;
-  const signedHeaders = 'host';
-  const payloadHash = sha256(''); // Hash of empty string
+    const canonicalHeaders = `host:${host}\n`;
+    const signedHeaders = 'host';
+    const payloadHash = sha256(''); // Hash of empty string
 
-  // Create canonical request string
-  const canonicalRequest = [
-    method,
-    canonicalUri,
-    canonicalQuerystring,
-    canonicalHeaders,
-    signedHeaders,
-    payloadHash
-  ].join('\n');
+    // Create canonical request string
+    const canonicalRequest = [
+      method,
+      canonicalUri,
+      canonicalQuerystring,
+      canonicalHeaders,
+      signedHeaders,
+      payloadHash
+    ].join('\n');
 
-  // Create string to sign
-  const stringToSign = [
-    algorithm,
-    amzdate,
-    credentialScope,
-    sha256(canonicalRequest)
-  ].join('\n');
+    // Create string to sign
+    const stringToSign = [
+      algorithm,
+      amzdate,
+      credentialScope,
+      sha256(canonicalRequest)
+    ].join('\n');
 
-  // Generate signing key
-  const kDate = hmac(CryptoJS.enc.Utf8.parse(`AWS4${credentials.secretAccessKey}`), datestamp);
-  const kRegion = hmac(kDate, region);
-  const kService = hmac(kRegion, service);
-  const kSigning = hmac(kService, 'aws4_request');
+    // Generate signing key
+    const kDate = hmac(CryptoJS.enc.Utf8.parse(`AWS4${credentials.secretAccessKey}`), datestamp);
+    const kRegion = hmac(kDate, region);
+    const kService = hmac(kRegion, service);
+    const kSigning = hmac(kService, 'aws4_request');
 
-  // Calculate signature
-  const signature = CryptoJS.HmacSHA256(stringToSign, kSigning).toString(CryptoJS.enc.Hex);
+    // Calculate signature
+    const signature = CryptoJS.HmacSHA256(stringToSign, kSigning).toString(CryptoJS.enc.Hex);
 
-  // Return full signed URL
-  return `wss://${host}${canonicalUri}?${canonicalQuerystring}&X-Amz-Signature=${signature}`;
-}
+    // Return full signed URL
+    return `wss://${host}${canonicalUri}?${canonicalQuerystring}&X-Amz-Signature=${signature}`;
+  }
 
 
   let mqttClient = null;
