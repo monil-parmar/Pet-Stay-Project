@@ -20,12 +20,7 @@ window.PETSTAY_CONFIG = {
   CHECKOUT_BOOKING_URL: 'https://24q261zi50.execute-api.us-east-1.amazonaws.com/checkout',
   RESTORE_BOOKING_URL: 'https://24q261zi50.execute-api.us-east-1.amazonaws.com/restore',
   PET_PHOTO_UPLOAD_URL: 'https://24q261zi50.execute-api.us-east-1.amazonaws.com/upload-url',
-  PET_PHOTO_PUBLIC_URL_BASE: 'https://petstay-pet-photos-101486688.s3.amazonaws.com',
-
-  IOT_ENDPOINT: 'a14wno4fkns9pt-ats.iot.us-east-1.amazonaws.com',  // Your IoT endpoint
-  IOT_TOPIC_DASHBOARD: 'petstay/admin/stats',  // Your MQTT topic
-  IOT_CLIENT_PREFIX: 'admin-dashboard-',                       // Optional client ID prefix
-  IDENTITY_POOL_ID: 'us-east-1:25fbdcc1-9e3d-4655-adbf-679d2f895c0c',
+  PET_PHOTO_PUBLIC_URL_BASE: 'https://petstay-pet-photos-101486688.s3.amazonaws.com'
 };
 
 for (const key in window.PETSTAY_CONFIG) {
@@ -33,6 +28,9 @@ for (const key in window.PETSTAY_CONFIG) {
     throw new Error(`Missing config value: ${key}. Did you forget to set environment variables?`);
   }
 }
+
+
+
 
 // window.PETSTAY_CONFIG = {
 //   AWS_REGION: '{{AWS_REGION}}',  // e.g., 'us-east-1'
