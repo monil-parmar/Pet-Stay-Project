@@ -36,7 +36,8 @@ window.PETSTAY_CONFIG = {
 };
 
 for (const key in window.PETSTAY_CONFIG) {
-  if (window.PETSTAY_CONFIG[key].includes("{{") || window.PETSTAY_CONFIG[key].includes("}}")) {
+  const val = window.PETSTAY_CONFIG[key];
+  if (typeof val === 'string' && (val.includes('{{') || val.includes('}}'))) {
     throw new Error(`Missing config value: ${key}. Did you forget to set environment variables?`);
   }
 }
