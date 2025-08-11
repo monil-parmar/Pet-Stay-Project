@@ -1,9 +1,13 @@
 //index.js
 
 // Redirect to Customer Booking page
-// 🔗 Redirect to Customer Booking page
-document.getElementById('left-button')?.addEventListener('click', () => {
-  window.location.href = '/customer/new-booking.html';
+// document.getElementById('left-button')?.addEventListener('click', () => {
+//   window.location.href = '/customer/new-booking.html';
+// });
+
+//Redirect to Customer Booking page
+document.getElementById('left-button-chat')?.addEventListener('click', () => {
+  window.location.href = '/customer/AI-Booking.html';
 });
 
 
