@@ -22,7 +22,13 @@ window.PETSTAY_CONFIG = {
   PET_PHOTO_UPLOAD_URL: 'https://24q261zi50.execute-api.us-east-1.amazonaws.com/upload-url',
   PET_PHOTO_PUBLIC_URL_BASE: 'https://petstay-pet-photos-101486688.s3.amazonaws.com',
 
-
+  // IOT Dashboard
+  IOT_DASHBOARD_API_URL: 'https://24q261zi50.execute-api.us-east-1.amazonaws.com/get-booking-trend',
+  IOT_ENDPOINT: 'a14wno4fkns9pt-ats.iot.us-east-1.amazonaws.com', 
+  IOT_TOPIC_DASHBOARD: 'petstay/admin/stats',  
+  IOT_CLIENT_PREFIX: 'admin-dashboard-',                       
+  IDENTITY_POOL_ID: 'us-east-1:25fbdcc1-9e3d-4655-adbf-679d2f895c0c',
+  
   // Chatbot (Amazon Lex V2)
   LEX: {
     REGION: 'us-east-1',
