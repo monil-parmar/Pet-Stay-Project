@@ -239,7 +239,7 @@ h5 {
 }
 
 
-  :root{
+  /* :root{
       --bg:#0f172a;--card:#111827;--muted:#94a3b8;--text:#e5e7eb;--ring:#1f2937;
       --bubble-user:#1f2937;--bubble-bot:#0b1220
     }
@@ -280,4 +280,4 @@ h5 {
   .summary-row:last-child{border-bottom:0}
   .pill{padding:2px 8px;border-radius:999px;background:#f3f4f6;font-weight:600}
   .pill.ok{background:#e6f7ed}
-  .pill.warn{background:#fff7ea}
+  .pill.warn{background:#fff7ea} */
