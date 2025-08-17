@@ -49,8 +49,18 @@
             <span class="text">Bookings</span>
           </a>
         </li>
-
-
+      <li class="nav-item active">
+          <a href="/admin-frontend/iot-dashboard.html">
+            <span class="icon"><i class="lni lni-stats-up"></i></span>
+            <span class="text">IoT Live Stats</span>
+          </a>
+        </li>
+            <li class="nav-item active">
+              <a href="/admin-frontend/mqtt-test.html">
+                <span class="icon"><i class="lni lni-stats-up"></i></span>
+                <span class="text">IoT Testing</span>
+              </a>
+            </li>
 
       </ul>
     </nav>
@@ -313,6 +323,7 @@
         </div>
       </div>
     </footer>
+
   </main>
 
 <!-- QR Modal -->
@@ -402,15 +413,11 @@
       style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px; border: 1px solid #ccc;"
     />
   ` : "";
+
             guestTable.innerHTML += `
 <tr>
   <td>
-    <img 
-      src="${b.PetPhotoURL}" 
-      alt="${b.PetName}" 
-      class="rounded" 
-      style="width: 50px; height: 50px; object-fit: cover; border: 1px solid #ccc;" 
-    />
+    <img src="${b.PetPhotoURL}" alt="${b.PetName}" class="rounded" style="width: 50px; height: 50px; object-fit: cover; border: 1px solid #ccc;" />
   </td>
   <td>
     <p class="text-sm fw-bold mb-0">${b.PetName}</p>
@@ -418,21 +425,16 @@
   </td>
   <td>
     ${b.QRCodeURL ? `
-      <img 
-        src="${b.QRCodeURL}" 
-        alt="QR Code"
-        class="qr-thumbnail"
-        style="width: 90px; cursor: pointer; border: 1px solid #ccc; border-radius: 6px; padding: 4px; background: #fff;" 
-        onclick="showQRModal('${b.QRCodeURL}')"
-      />
+      <img src="${b.QRCodeURL}" alt="QR Code" class="qr-thumbnail" style="width: 60px; cursor: pointer;" onclick="showQRModal('${b.QRCodeURL}')" />
     ` : '<span class="text-muted text-sm">—</span>'}
   </td>
   <td><p class="text-sm">${b.OwnerName}</p></td>
   <td><p class="text-sm">${b.RoomNumber || '—'}</p></td>
   <td><p class="text-sm">${b.CheckInDate}</p></td>
   <td><p class="text-sm">${daysLeft} day${daysLeft !== 1 ? 's' : ''}</p></td>
-  <td><span class="status-btn success-btn">Checked In</span></td>
+  <td><span class="status-btn success-btn">${b.Status}</span></td>
 </tr>`;
+
 
 
           }
